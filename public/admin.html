@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#FF6B35">
+  <title>厨房管理</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script>
+    const SUPABASE_URL = 'https://yrqparacjtjkgozfwsqj.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlycXBhcmFjanRqa2dvemZ3c3FqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3NTk0OTksImV4cCI6MjA3ODMzNTQ5OX0.jUnvHmo5jxLCQPtqPc7S8O1S3Il8FtqMrfRMN9OsRBc';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  </script>
+</head>
+<body>
+  <div class="container">
+    <div class="admin-nav">
+      <button class="nav-btn active" onclick="showAdminTab('recipes', this)">📖 菜谱管理</button>
+      <button class="nav-btn" onclick="showAdminTab('orders', this)">📋 今日点餐</button>
+    </div>
+
+    <!-- 菜谱管理 -->
+    <div id="tab-recipes" class="admin-tab active">
+      <div class="admin-header">
+        <h1>📖 我的菜谱</h1>
+        <button class="btn-add" onclick="showAddRecipe()">+ 添加</button>
+      </div>
+      <div id="admin-recipe-list"></div>
+    </div>
+
+    <!-- 今日点餐 -->
+    <div id="tab-orders" class="admin-tab">
+      <div class="admin-header">
+        <h1>📋 今日点餐</h1>
+      </div>
+      <div id="order-list"></div>
+      <div id="order-summary" class="order-summary"></div>
+    </div>
+
+    <!-- 菜谱编辑弹窗 -->
+    <div id="modal-recipe" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="modal-title">添加菜谱</h2>
+          <button class="close-btn" onclick="closeModal()">✕</button>
+        </div>
+        <form id="recipe-form">
+          <input type="hidden" id="recipe-id">
+          <div class="form-group">
+            <label>菜名</label>
+            <input type="text" id="recipe-name" required placeholder="如：红烧肉">
+          </div>
+          <div class="form-group">
+            <label>分类</label>
+            <input type="text" id="recipe-category" placeholder="如：家常菜、汤类、凉菜" list="category-list">
+            <datalist id="category-list"></datalist>
+          </div>
+          <div class="form-group">
+            <label>配菜（每行一个）</label>
+            <textarea id="recipe-ingredients" rows="5" placeholder="五花肉 500g&#10;生抽 2勺&#10;老抽 1勺&#10;冰糖 适量"></textarea>
+          </div>
+          <div class="form-group">
+            <label>做法步骤</label>
+            <textarea id="recipe-steps" rows="8" placeholder="1. 五花肉切块，冷水下锅焯水&#10;2. 锅中放油，下冰糖炒糖色&#10;3. 放入五花肉翻炒上色"></textarea>
+          </div>
+          <div class="form-group">
+            <label>图片</label>
+            <input type="file" id="recipe-image" accept="image/*" onchange="previewImage(this)">
+            <img id="image-preview" class="image-preview" style="display:none">
+          </div>
+          <button type="submit" class="btn-primary" onclick="saveRecipe(event)">保存</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- 菜谱详情弹窗 -->
+    <div id="modal-detail" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="detail-name"></h2>
+          <button class="close-btn" onclick="closeDetailModal()">✕</button>
+        </div>
+        <div id="detail-content"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/admin.js"></script>
+</body>
+</html>

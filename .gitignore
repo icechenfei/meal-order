@@ -1,0 +1,7 @@
+node_modules/
+.vercel
+uploads/
+server.js
+package.json
+package-lock.json
+data/

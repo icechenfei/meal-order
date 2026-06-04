@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#FF6B35">
+  <title>今天吃什么</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script>
+    const SUPABASE_URL = 'https://yrqparacjtjkgozfwsqj.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlycXBhcmFjanRqa2dvemZ3c3FqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3NTk0OTksImV4cCI6MjA3ODMzNTQ5OX0.jUnvHmo5jxLCQPtqPc7S8O1S3Il8FtqMrfRMN9OsRBc';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  </script>
+</head>
+<body>
+  <div class="container">
+
+    <!-- 选择身份 -->
+    <div id="page-member" class="page active">
+      <div class="header">
+        <h1>🍽️ 今天吃什么</h1>
+        <p class="subtitle">选好你的身份，开始点餐吧</p>
+      </div>
+      <div class="member-grid" id="member-list">
+        <div class="member-card" onclick="selectMember('爸爸')">
+          <span class="emoji">👨</span>爸爸
+        </div>
+        <div class="member-card" onclick="selectMember('妈妈')">
+          <span class="emoji">👩</span>妈妈
+        </div>
+        <div class="member-card" onclick="selectMember('宝贝')">
+          <span class="emoji">🧒</span>宝贝
+        </div>
+        <div class="member-card" onclick="selectMember('客人')">
+          <span class="emoji">👤</span>客人
+        </div>
+      </div>
+      <div class="custom-member">
+        <input type="text" id="custom-name" placeholder="输入其他名字" maxlength="20">
+        <button onclick="selectMember(document.getElementById('custom-name').value)">确认</button>
+      </div>
+    </div>
+
+    <!-- 菜单 -->
+    <div id="page-menu" class="page">
+      <div class="header">
+        <div class="top-bar">
+          <button class="back-btn" onclick="showPage('page-member')">← 返回</button>
+          <span class="member-badge" id="current-member"></span>
+        </div>
+        <h1>📋 今日菜单</h1>
+      </div>
+      <div class="category-bar" id="category-bar"></div>
+      <div id="recipe-list"></div>
+    </div>
+
+    <!-- 菜品详情 -->
+    <div id="page-detail" class="page">
+      <div class="header">
+        <div class="top-bar">
+          <button class="back-btn" onclick="showPage('page-menu')">← 返回菜单</button>
+        </div>
+      </div>
+      <div id="recipe-detail"></div>
+      <div class="order-section">
+        <div class="current-recipe" id="order-recipe-name"></div>
+        <input type="text" id="order-note" placeholder="备注（少辣、多放盐…）" maxlength="100">
+        <button class="btn-order" onclick="placeOrder()">🍽️ 就吃这个！</button>
+      </div>
+    </div>
+
+    <!-- 下单成功 -->
+    <div id="page-success" class="page">
+      <div class="success-content">
+        <div class="success-icon">✅</div>
+        <h2>点餐成功！</h2>
+        <p>已经通知厨师准备啦～</p>
+        <button class="btn-primary" onclick="showPage('page-menu')">继续点餐</button>
+        <button class="btn-secondary" onclick="showPage('page-member')">换人点餐</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
