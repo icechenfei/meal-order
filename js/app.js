@@ -6,19 +6,22 @@ let categories = [];
 function showPage(pageId) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById(pageId).classList.add('active');
-  if (pageId === 'page-member') {
+  if (pageId === 'page-menu') {
     currentRecipe = null;
     document.getElementById('order-note').value = '';
+    loadRecipes();
   }
-  if (pageId === 'page-menu') loadRecipes();
 }
 
-function selectMember(name) {
-  name = (name || '').trim();
-  if (!name) return toast('请输入名字');
-  currentMember = name;
-  document.getElementById('current-member').textContent = currentMember;
-  showPage('page-menu');
+async function initCurrentUser() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session?.user?.email) {
+    currentMember = session.user.email;
+  }
+  const el = document.getElementById('menu-user-email');
+  if (el && session?.user?.email) {
+    el.textContent = session.user.email;
+  }
 }
 
 async function loadRecipes() {
@@ -148,15 +151,4 @@ function toast(msg) {
   setTimeout(() => el.remove(), 2500);
 }
 
-// 回车键触发确认
-document.addEventListener('keydown', e => {
-  if (e.key === 'Enter') {
-    const memberPage = document.getElementById('page-member');
-    const detailPage = document.getElementById('page-detail');
-    if (memberPage.classList.contains('active') && document.activeElement?.id === 'custom-name') {
-      selectMember(document.getElementById('custom-name').value);
-    }
-  }
-});
-
-loadRecipes();
+initCurrentUser().then(() => loadRecipes());

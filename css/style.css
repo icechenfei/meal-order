@@ -96,13 +96,13 @@ body {
   transition: background .2s;
 }
 .back-btn:active { background: #ffd5c0; }
-.member-badge {
-  background: var(--primary);
-  color: white;
-  padding: 6px 16px;
-  border-radius: 20px;
+.user-email-badge {
+  color: var(--text-secondary);
   font-size: 14px;
   font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ===== Member Selection ===== */

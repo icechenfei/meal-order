@@ -20,38 +20,11 @@
       <span class="user-email" id="user-email"></span>
       <button class="logout-btn" onclick="logout()">退出</button>
     </div>
-    <!-- 选择身份 -->
-    <div id="page-member" class="page active">
-      <div class="header">
-        <h1>🍽️ 今天吃什么</h1>
-        <p class="subtitle">选好你的身份，开始点餐吧</p>
-      </div>
-      <div class="member-grid" id="member-list">
-        <div class="member-card" onclick="selectMember('爸爸')">
-          <span class="emoji">👨</span>爸爸
-        </div>
-        <div class="member-card" onclick="selectMember('妈妈')">
-          <span class="emoji">👩</span>妈妈
-        </div>
-        <div class="member-card" onclick="selectMember('宝贝')">
-          <span class="emoji">🧒</span>宝贝
-        </div>
-        <div class="member-card" onclick="selectMember('客人')">
-          <span class="emoji">👤</span>客人
-        </div>
-      </div>
-      <div class="custom-member">
-        <input type="text" id="custom-name" placeholder="输入其他名字" maxlength="20">
-        <button onclick="selectMember(document.getElementById('custom-name').value)">确认</button>
-      </div>
-    </div>
-
     <!-- 菜单 -->
-    <div id="page-menu" class="page">
+    <div id="page-menu" class="page active">
       <div class="header">
         <div class="top-bar">
-          <button class="back-btn" onclick="showPage('page-member')">← 返回</button>
-          <span class="member-badge" id="current-member"></span>
+          <span class="user-email-badge" id="menu-user-email"></span>
         </div>
         <h1>📋 今日菜单</h1>
       </div>
@@ -81,7 +54,6 @@
         <h2>点餐成功！</h2>
         <p>已经通知厨师准备啦～</p>
         <button class="btn-primary" onclick="showPage('page-menu')">继续点餐</button>
-        <button class="btn-secondary" onclick="showPage('page-member')">换人点餐</button>
       </div>
     </div>
 
