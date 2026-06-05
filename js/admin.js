@@ -173,7 +173,7 @@ function showIngredients(title, idx) {
   const ingredients = window._mealIngredients[idx];
   if (!ingredients) return;
   document.getElementById('ingredients-modal-title').textContent = title;
-  document.getElementById('ingredients-modal-list').innerHTML = ingredients.map(i => `<li>${i}</li>`).join('');
+  document.getElementById('ingredients-modal-list').innerHTML = ingredients.map(i => `<li>${i.name} x${i.count}</li>`).join('');
   document.getElementById('modal-ingredients').classList.add('active');
 }
 
@@ -284,11 +284,15 @@ async function loadOrders() {
   }
 
   const getGroupIngredients = items => {
-    const ingSet = new Set();
+    const countMap = new Map();
     items.forEach(o => {
-      (recipeIngredients[o.recipe_id] || []).forEach(ing => ingSet.add(ing));
+      (recipeIngredients[o.recipe_id] || []).forEach(ing => {
+        countMap.set(ing, (countMap.get(ing) || 0) + 1);
+      });
     });
-    return [...ingSet];
+    return [...countMap.entries()]
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
   };
 
   let html = '';
