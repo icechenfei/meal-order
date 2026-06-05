@@ -308,19 +308,17 @@ async function loadOrders() {
       <div class="meal-group">
         <div class="meal-group-header">
           <span class="meal-group-time">🕐 ${fmt(new Date(g.meal_date))}</span>
-          ${done
-            ? '<span class="status-done">✅ 全部完成</span>'
-            : `<button class="btn-done" onclick="markMealDone('${g.meal_id}')">✅ 全部完成</button>`
-          }
+          <div class="meal-group-header-right">
+            ${groupIngs.length > 0 ? `<button class="btn-ingredients" onclick="showIngredients('该餐食材', ${idx})">🥬 食材</button>` : ''}
+            ${done
+              ? '<span class="status-done">✅ 全部完成</span>'
+              : `<button class="btn-done" onclick="markMealDone('${g.meal_id}')">✅ 全部完成</button>`
+            }
+          </div>
         </div>
         <div class="meal-group-items">
           ${g.items.map(renderItem).join('')}
         </div>
-        ${groupIngs.length > 0 ? `
-          <div class="meal-group-ingredients">
-            <button class="btn-ingredients" onclick="showIngredients('该餐食材', ${idx})">🥬 食材</button>
-          </div>
-        ` : ''}
       </div>
     `;
   });
@@ -333,15 +331,13 @@ async function loadOrders() {
       <div class="meal-group">
         <div class="meal-group-header">
           <span class="meal-group-time">📋 其他订单</span>
+          <div class="meal-group-header-right">
+            ${noMealIngs.length > 0 ? `<button class="btn-ingredients" onclick="showIngredients('今日食材', ${idx})">🥬 食材</button>` : ''}
+          </div>
         </div>
         <div class="meal-group-items">
           ${noMeal.map(renderItem).join('')}
         </div>
-        ${noMealIngs.length > 0 ? `
-          <div class="meal-group-ingredients">
-            <button class="btn-ingredients" onclick="showIngredients('今日食材', ${idx})">🥬 食材</button>
-          </div>
-        ` : ''}
       </div>
     `;
   }

@@ -579,6 +579,11 @@ body {
   background: var(--primary-light);
   border-bottom: 1px solid var(--border);
 }
+.meal-group-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 .meal-group-time {
   font-size: 14px;
   font-weight: 600;
