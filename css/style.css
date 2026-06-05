@@ -599,16 +599,22 @@ body {
   margin-bottom: 10px;
   font-size: 14px;
 }
-.ingredient-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+.ingredient-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
-.ingredient-tag {
-  background: var(--primary-light);
-  color: var(--primary-dark);
-  padding: 4px 12px;
-  border-radius: 20px;
+.ingredient-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+.ingredient-list li:last-child { border-bottom: none; }
+.ingredient-list .ing-count {
+  color: var(--primary);
+  font-weight: 600;
   font-size: 13px;
 }
 

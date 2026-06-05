@@ -234,7 +234,7 @@ async function loadOrders() {
 
   // 获取今日用到的食材
   const recipeIds = [...new Set(orders.map(o => o.recipe_id).filter(Boolean))];
-  let allIngredients = [];
+  const ingredientMap = {};
   if (recipeIds.length > 0) {
     const { data: recipes } = await supabase
       .from('recipes')
@@ -244,25 +244,26 @@ async function loadOrders() {
       recipes.forEach(r => {
         if (r.ingredients) {
           r.ingredients.split('\n').filter(Boolean).forEach(line => {
-            // 取食材名称：按空格/制表符分割，取第一段（去掉数量）
             const name = line.trim().split(/[\s\t]+/)[0];
-            if (name) allIngredients.push(name);
+            if (name) ingredientMap[name] = (ingredientMap[name] || 0) + 1;
           });
         }
       });
     }
   }
-  const uniqueIngredients = [...new Set(allIngredients)];
+  const ingredientEntries = Object.entries(ingredientMap).sort((a, b) => b[1] - a[1]);
 
   summaryEl.innerHTML = `
     <h3>📊 今日汇总（共 ${total} 份）</h3>
     ${Object.entries(summary).map(([name, count]) =>
       `<div class="summary-item"><span>${name}</span><span class="count">${count} 份</span></div>`
     ).join('')}
-    ${uniqueIngredients.length > 0 ? `
+    ${ingredientEntries.length > 0 ? `
       <div class="summary-ingredients">
         <h4>🥬 今日食材</h4>
-        <div class="ingredient-tags">${uniqueIngredients.map(i => `<span class="ingredient-tag">${i}</span>`).join('')}</div>
+        <ul class="ingredient-list">${ingredientEntries.map(([name, count]) =>
+          count > 1 ? `<li><span>${name}</span><span class="ing-count">×${count}</span></li>` : `<li><span>${name}</span></li>`
+        ).join('')}</ul>
       </div>
     ` : ''}
   `;
