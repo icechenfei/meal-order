@@ -73,8 +73,11 @@
         return;
       }
 
+      const { data: { session } } = await supabase.auth.getSession();
+      const role = session?.user?.user_metadata?.role || 'user';
       const params = new URLSearchParams(window.location.search);
-      window.location.href = params.get('redirect') || 'index.html';
+      const redirect = params.get('redirect') || (role === 'admin' ? 'admin.html' : 'index.html');
+      window.location.href = redirect;
     });
   </script>
 </body>
