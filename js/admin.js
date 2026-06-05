@@ -249,10 +249,40 @@ async function loadOrders() {
     return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
   };
 
+  const allRecipeIds = [...new Set(orders.map(o => o.recipe_id).filter(Boolean))];
+  const recipeIngredients = {};
+  if (allRecipeIds.length > 0) {
+    const { data: recipes } = await supabase
+      .from('recipes')
+      .select('id, ingredients')
+      .in('id', allRecipeIds);
+    if (recipes) {
+      recipes.forEach(r => {
+        const ings = new Set();
+        if (r.ingredients) {
+          r.ingredients.split('\n').filter(Boolean).forEach(line => {
+            const name = line.trim().split(/[\s\t]+/)[0];
+            if (name) ings.add(name);
+          });
+        }
+        recipeIngredients[r.id] = [...ings];
+      });
+    }
+  }
+
+  const getGroupIngredients = items => {
+    const ingSet = new Set();
+    items.forEach(o => {
+      (recipeIngredients[o.recipe_id] || []).forEach(ing => ingSet.add(ing));
+    });
+    return [...ingSet];
+  };
+
   let html = '';
 
   Object.values(groups).forEach(g => {
     const done = allDone(g.items);
+    const groupIngs = getGroupIngredients(g.items);
     html += `
       <div class="meal-group">
         <div class="meal-group-header">
@@ -265,11 +295,20 @@ async function loadOrders() {
         <div class="meal-group-items">
           ${g.items.map(renderItem).join('')}
         </div>
+        ${groupIngs.length > 0 ? `
+          <div class="meal-group-ingredients">
+            <h4>🥬 食材</h4>
+            <div class="ingredient-tags">
+              ${groupIngs.map(name => `<span class="ingredient-tag">${name}</span>`).join('')}
+            </div>
+          </div>
+        ` : ''}
       </div>
     `;
   });
 
   if (noMeal.length > 0) {
+    const noMealIngs = getGroupIngredients(noMeal);
     html += `
       <div class="meal-group">
         <div class="meal-group-header">
@@ -278,6 +317,14 @@ async function loadOrders() {
         <div class="meal-group-items">
           ${noMeal.map(renderItem).join('')}
         </div>
+        ${noMealIngs.length > 0 ? `
+          <div class="meal-group-ingredients">
+            <h4>🥬 食材</h4>
+            <div class="ingredient-tags">
+              ${noMealIngs.map(name => `<span class="ingredient-tag">${name}</span>`).join('')}
+            </div>
+          </div>
+        ` : ''}
       </div>
     `;
   }
@@ -291,39 +338,11 @@ async function loadOrders() {
   });
   const total = orders.length;
 
-  const recipeIds = [...new Set(orders.map(o => o.recipe_id).filter(Boolean))];
-  const ingredientMap = {};
-  if (recipeIds.length > 0) {
-    const { data: recipes } = await supabase
-      .from('recipes')
-      .select('ingredients')
-      .in('id', recipeIds);
-    if (recipes) {
-      recipes.forEach(r => {
-        if (r.ingredients) {
-          r.ingredients.split('\n').filter(Boolean).forEach(line => {
-            const name = line.trim().split(/[\s\t]+/)[0];
-            if (name) ingredientMap[name] = (ingredientMap[name] || 0) + 1;
-          });
-        }
-      });
-    }
-  }
-  const ingredientEntries = Object.entries(ingredientMap).sort((a, b) => b[1] - a[1]);
-
   summaryEl.innerHTML = `
     <h3>📊 今日汇总（共 ${total} 份）</h3>
     ${Object.entries(summary).map(([name, count]) =>
       `<div class="summary-item"><span>${name}</span><span class="count">${count} 份</span></div>`
     ).join('')}
-    ${ingredientEntries.length > 0 ? `
-      <div class="summary-ingredients">
-        <h4>🥬 今日食材</h4>
-        <ul class="ingredient-list">${ingredientEntries.map(([name, count]) =>
-          count > 1 ? `<li><span>${name}</span><span class="ing-count">×${count}</span></li>` : `<li><span>${name}</span></li>`
-        ).join('')}</ul>
-      </div>
-    ` : ''}
   `;
 }
 

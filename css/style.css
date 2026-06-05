@@ -595,6 +595,29 @@ body {
 .meal-group-items .order-item:last-child {
   margin-bottom: 0;
 }
+.meal-group-ingredients {
+  padding: 10px 16px 12px;
+  border-top: 1px solid var(--border);
+}
+.meal-group-ingredients h4 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.ingredient-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.ingredient-tag {
+  display: inline-block;
+  padding: 3px 10px;
+  background: var(--primary-light);
+  color: var(--primary);
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
 
 .status-done {
   color: var(--success);
