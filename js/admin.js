@@ -203,7 +203,23 @@ async function loadOrders() {
     return;
   }
 
-  list.innerHTML = orders.map(o => {
+  // 按 meal_id 分组
+  const groups = {};
+  const noMeal = [];
+  orders.forEach(o => {
+    if (o.meal_id) {
+      if (!groups[o.meal_id]) {
+        groups[o.meal_id] = { meal_id: o.meal_id, meal_date: o.meal_date || o.created_at, items: [] };
+      }
+      groups[o.meal_id].items.push(o);
+    } else {
+      noMeal.push(o);
+    }
+  });
+
+  const allDone = items => items.every(i => i.status === 'done');
+
+  const renderItem = o => {
     const dt = new Date(o.created_at);
     const pad = n => String(n).padStart(2, '0');
     const time = `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())} ${pad(dt.getHours())}:${pad(dt.getMinutes())}:${pad(dt.getSeconds())}`;
@@ -226,7 +242,47 @@ async function loadOrders() {
         </div>
       </div>
     `;
-  }).join('');
+  };
+
+  const fmt = d => {
+    const pad = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+
+  let html = '';
+
+  Object.values(groups).forEach(g => {
+    const done = allDone(g.items);
+    html += `
+      <div class="meal-group">
+        <div class="meal-group-header">
+          <span class="meal-group-time">🕐 ${fmt(new Date(g.meal_date))}</span>
+          ${done
+            ? '<span class="status-done">✅ 全部完成</span>'
+            : `<button class="btn-done" onclick="markMealDone('${g.meal_id}')">✅ 全部完成</button>`
+          }
+        </div>
+        <div class="meal-group-items">
+          ${g.items.map(renderItem).join('')}
+        </div>
+      </div>
+    `;
+  });
+
+  if (noMeal.length > 0) {
+    html += `
+      <div class="meal-group">
+        <div class="meal-group-header">
+          <span class="meal-group-time">📋 其他订单</span>
+        </div>
+        <div class="meal-group-items">
+          ${noMeal.map(renderItem).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  list.innerHTML = html || '<div class="empty-state"><div class="emoji">📋</div><p>今天还没有人点餐</p></div>';
 
   const summary = {};
   orders.forEach(o => {
@@ -235,7 +291,6 @@ async function loadOrders() {
   });
   const total = orders.length;
 
-  // 获取今日用到的食材
   const recipeIds = [...new Set(orders.map(o => o.recipe_id).filter(Boolean))];
   const ingredientMap = {};
   if (recipeIds.length > 0) {
@@ -274,6 +329,15 @@ async function loadOrders() {
 
 async function markDone(id) {
   const { error } = await supabase.from('orders').update({ status: 'done' }).eq('id', id);
+  if (error) { toast('操作失败'); return; }
+  loadOrders();
+}
+
+async function markMealDone(mealId) {
+  const { error } = await supabase
+    .from('orders')
+    .update({ status: 'done' })
+    .eq('meal_id', mealId);
   if (error) { toast('操作失败'); return; }
   loadOrders();
 }
