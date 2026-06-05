@@ -1,4 +1,5 @@
 let editingId = null;
+window._mealIngredients = [];
 
 function showAdminTab(tab, btn) {
   document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
@@ -168,7 +169,9 @@ function closeModal() { document.getElementById('modal-recipe').classList.remove
 function closeDetailModal() { document.getElementById('modal-detail').classList.remove('active'); }
 function closeIngredientsModal() { document.getElementById('modal-ingredients').classList.remove('active'); }
 
-function showIngredients(title, ingredients) {
+function showIngredients(title, idx) {
+  const ingredients = window._mealIngredients[idx];
+  if (!ingredients) return;
   document.getElementById('ingredients-modal-title').textContent = title;
   document.getElementById('ingredients-modal-list').innerHTML = ingredients.map(i => `<li>${i}</li>`).join('');
   document.getElementById('modal-ingredients').classList.add('active');
@@ -289,10 +292,14 @@ async function loadOrders() {
   };
 
   let html = '';
+  window._mealIngredients = [];
+  let ingIdx = 0;
 
   Object.values(groups).forEach(g => {
     const done = allDone(g.items);
     const groupIngs = getGroupIngredients(g.items);
+    window._mealIngredients.push(groupIngs);
+    const idx = ingIdx++;
     html += `
       <div class="meal-group">
         <div class="meal-group-header">
@@ -307,7 +314,7 @@ async function loadOrders() {
         </div>
         ${groupIngs.length > 0 ? `
           <div class="meal-group-ingredients">
-            <button class="btn-ingredients" onclick="showIngredients('该餐食材', ${JSON.stringify(groupIngs)})">🥬 食材</button>
+            <button class="btn-ingredients" onclick="showIngredients('该餐食材', ${idx})">🥬 食材</button>
           </div>
         ` : ''}
       </div>
@@ -316,6 +323,8 @@ async function loadOrders() {
 
   if (noMeal.length > 0) {
     const noMealIngs = getGroupIngredients(noMeal);
+    window._mealIngredients.push(noMealIngs);
+    const idx = ingIdx++;
     html += `
       <div class="meal-group">
         <div class="meal-group-header">
@@ -326,7 +335,7 @@ async function loadOrders() {
         </div>
         ${noMealIngs.length > 0 ? `
           <div class="meal-group-ingredients">
-            <button class="btn-ingredients" onclick="showIngredients('今日食材', ${JSON.stringify(noMealIngs)})">🥬 食材</button>
+            <button class="btn-ingredients" onclick="showIngredients('今日食材', ${idx})">🥬 食材</button>
           </div>
         ` : ''}
       </div>
