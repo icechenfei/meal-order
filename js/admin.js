@@ -232,11 +232,39 @@ async function loadOrders() {
   });
   const total = orders.length;
 
+  // 获取今日用到的食材
+  const recipeIds = [...new Set(orders.map(o => o.recipe_id).filter(Boolean))];
+  let allIngredients = [];
+  if (recipeIds.length > 0) {
+    const { data: recipes } = await supabase
+      .from('recipes')
+      .select('ingredients')
+      .in('id', recipeIds);
+    if (recipes) {
+      recipes.forEach(r => {
+        if (r.ingredients) {
+          r.ingredients.split('\n').filter(Boolean).forEach(line => {
+            // 取食材名称：按空格/制表符分割，取第一段（去掉数量）
+            const name = line.trim().split(/[\s\t]+/)[0];
+            if (name) allIngredients.push(name);
+          });
+        }
+      });
+    }
+  }
+  const uniqueIngredients = [...new Set(allIngredients)];
+
   summaryEl.innerHTML = `
     <h3>📊 今日汇总（共 ${total} 份）</h3>
     ${Object.entries(summary).map(([name, count]) =>
       `<div class="summary-item"><span>${name}</span><span class="count">${count} 份</span></div>`
     ).join('')}
+    ${uniqueIngredients.length > 0 ? `
+      <div class="summary-ingredients">
+        <h4>🥬 今日食材</h4>
+        <div class="ingredient-tags">${uniqueIngredients.map(i => `<span class="ingredient-tag">${i}</span>`).join('')}</div>
+      </div>
+    ` : ''}
   `;
 }
 

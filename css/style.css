@@ -590,6 +590,27 @@ body {
   color: var(--primary);
   font-weight: 700;
 }
+.summary-ingredients {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.summary-ingredients h4 {
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+.ingredient-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ingredient-tag {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+}
 
 /* ===== Modal ===== */
 .modal {
