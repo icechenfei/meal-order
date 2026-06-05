@@ -20,6 +20,7 @@
       <span class="user-email" id="user-email"></span>
       <button class="logout-btn" onclick="logout()">退出</button>
     </div>
+
     <!-- 菜单 -->
     <div id="page-menu" class="page active">
       <div class="header">
@@ -27,9 +28,16 @@
           <span class="user-email-badge" id="menu-user-email"></span>
         </div>
         <h1>📋 今日菜单</h1>
+        <div class="menu-tabs">
+          <button class="menu-tab active" data-tab="menu" onclick="switchMenuTab('menu', this)">📋 菜单</button>
+          <button class="menu-tab" data-tab="history" onclick="switchMenuTab('history', this)">📅 历史菜单</button>
+        </div>
       </div>
-      <div class="category-bar" id="category-bar"></div>
-      <div id="recipe-list"></div>
+      <div id="menu-content" class="menu-section active">
+        <div class="category-bar" id="category-bar"></div>
+        <div id="recipe-list"></div>
+      </div>
+      <div id="history-content" class="menu-section"></div>
     </div>
 
     <!-- 菜品详情 -->
@@ -43,7 +51,7 @@
       <div class="order-section">
         <div class="current-recipe" id="order-recipe-name"></div>
         <input type="text" id="order-note" placeholder="备注（少辣、多放盐…）" maxlength="100">
-        <button class="btn-order" onclick="placeOrder()">🍽️ 就吃这个！</button>
+        <button class="btn-order" onclick="addToCart()">🛒 加入已点</button>
       </div>
     </div>
 
@@ -55,6 +63,27 @@
         <p>已经通知厨师准备啦～</p>
         <button class="btn-primary" onclick="showPage('page-menu')">继续点餐</button>
       </div>
+    </div>
+
+    <!-- 已点菜谱（购物车） -->
+    <div id="page-cart" class="page">
+      <div class="header">
+        <div class="top-bar">
+          <button class="back-btn" onclick="showPage('page-menu')">← 返回菜单</button>
+        </div>
+        <h1>🛒 已点菜谱</h1>
+      </div>
+      <div id="cart-list"></div>
+      <div class="cart-bottom">
+        <div class="cart-total" id="cart-total"></div>
+        <button class="btn-order" onclick="submitCart()">合并提交</button>
+      </div>
+    </div>
+
+    <!-- 浮动已点按钮 -->
+    <div class="cart-float" id="cart-float" onclick="showCart()">
+      <span class="cart-float-icon">🛒</span>
+      <span class="cart-float-count" id="cart-count">0</span>
     </div>
 
     <div class="admin-entry" id="admin-entry">
