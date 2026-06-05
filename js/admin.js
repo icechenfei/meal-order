@@ -166,6 +166,13 @@ function previewImage(input) {
 
 function closeModal() { document.getElementById('modal-recipe').classList.remove('active'); }
 function closeDetailModal() { document.getElementById('modal-detail').classList.remove('active'); }
+function closeIngredientsModal() { document.getElementById('modal-ingredients').classList.remove('active'); }
+
+function showIngredients(title, ingredients) {
+  document.getElementById('ingredients-modal-title').textContent = title;
+  document.getElementById('ingredients-modal-list').innerHTML = ingredients.map(i => `<li>${i}</li>`).join('');
+  document.getElementById('modal-ingredients').classList.add('active');
+}
 
 // 点击遮罩关闭
 document.getElementById('modal-recipe').addEventListener('click', e => {
@@ -173,6 +180,9 @@ document.getElementById('modal-recipe').addEventListener('click', e => {
 });
 document.getElementById('modal-detail').addEventListener('click', e => {
   if (e.target === e.currentTarget) closeDetailModal();
+});
+document.getElementById('modal-ingredients').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeIngredientsModal();
 });
 
 async function loadCategories() {
@@ -297,10 +307,7 @@ async function loadOrders() {
         </div>
         ${groupIngs.length > 0 ? `
           <div class="meal-group-ingredients">
-            <h4>🥬 食材</h4>
-            <div class="ingredient-tags">
-              ${groupIngs.map(name => `<span class="ingredient-tag">${name}</span>`).join('')}
-            </div>
+            <button class="btn-ingredients" onclick="showIngredients('该餐食材', ${JSON.stringify(groupIngs)})">🥬 食材</button>
           </div>
         ` : ''}
       </div>
@@ -319,10 +326,7 @@ async function loadOrders() {
         </div>
         ${noMealIngs.length > 0 ? `
           <div class="meal-group-ingredients">
-            <h4>🥬 食材</h4>
-            <div class="ingredient-tags">
-              ${noMealIngs.map(name => `<span class="ingredient-tag">${name}</span>`).join('')}
-            </div>
+            <button class="btn-ingredients" onclick="showIngredients('今日食材', ${JSON.stringify(noMealIngs)})">🥬 食材</button>
           </div>
         ` : ''}
       </div>
