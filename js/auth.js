@@ -4,7 +4,7 @@ async function checkAuth(requiredRole = 'user') {
     window.location.href = 'login.html?redirect=' + encodeURIComponent(location.pathname);
     return null;
   }
-  const role = session.user.user_metadata?.role || 'user';
+  const role = await getUserRole();
   if (requiredRole === 'admin' && role !== 'admin') {
     window.location.href = 'index.html';
     return null;
@@ -21,7 +21,13 @@ async function checkAuth(requiredRole = 'user') {
 async function getUserRole() {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) return null;
-  return session.user.user_metadata?.role || 'user';
+  // 优先从 profiles 表读取
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', session.user.id)
+    .single();
+  return profile?.role || session.user.user_metadata?.role || 'user';
 }
 
 async function isAdmin() {
