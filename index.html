@@ -13,15 +13,6 @@
     supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   </script>
   <script src="js/auth.js"></script>
-  <script>
-    (async function() {
-      await checkAuth('user');
-      if (await isAdmin()) {
-        const entry = document.getElementById('admin-entry');
-        if (entry) entry.style.display = 'flex';
-      }
-    })();
-  </script>
 </head>
 <body>
   <div class="container">
@@ -100,5 +91,14 @@
   </div>
 
   <script src="js/app.js"></script>
+  <script>
+    (async function() {
+      await checkAuth('user');
+      if (await isAdmin()) {
+        const entry = document.getElementById('admin-entry');
+        if (entry) entry.style.display = 'flex';
+      }
+    })();
+  </script>
 </body>
 </html>
