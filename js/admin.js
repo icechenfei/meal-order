@@ -204,7 +204,9 @@ async function loadOrders() {
   }
 
   list.innerHTML = orders.map(o => {
-    const time = new Date(o.created_at).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+    const dt = new Date(o.created_at);
+    const pad = n => String(n).padStart(2, '0');
+    const time = `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())} ${pad(dt.getHours())}:${pad(dt.getMinutes())}:${pad(dt.getSeconds())}`;
     const statusHtml = o.status === 'done'
       ? '<span class="status-done">✅ 已完成</span>'
       : `<button class="btn-done" onclick="markDone(${o.id})">✅ 完成</button>`;
@@ -220,6 +222,7 @@ async function loadOrders() {
         <div class="order-actions">
           <button class="btn-detail" onclick="viewRecipe(${o.recipe_id})">查看做法</button>
           ${statusHtml}
+          <button class="btn-delete-order" onclick="deleteOrder(${o.id})">🗑️ 删除</button>
         </div>
       </div>
     `;
@@ -273,6 +276,14 @@ async function markDone(id) {
   const { error } = await supabase.from('orders').update({ status: 'done' }).eq('id', id);
   if (error) { toast('操作失败'); return; }
   loadOrders();
+}
+
+async function deleteOrder(id) {
+  if (!confirm('确定删除这条点餐记录？')) return;
+  const { error } = await supabase.from('orders').delete().eq('id', id);
+  if (error) { toast('删除失败：' + error.message); return; }
+  loadOrders();
+  toast('已删除');
 }
 
 function toast(msg) {

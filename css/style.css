@@ -559,6 +559,8 @@ body {
 .btn-done:active { background: #C8E6C9; }
 .btn-detail { background: #FFF3E0; color: #E65100; }
 .btn-detail:active { background: #FFE0B2; }
+.btn-delete-order { background: #FFEBEE; color: #D32F2F; }
+.btn-delete-order:active { background: #FFCDD2; }
 .status-done {
   color: var(--success);
   font-weight: 500;
