@@ -11,10 +11,33 @@
     const SUPABASE_URL = 'https://yrqparacjtjkgozfwsqj.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlycXBhcmFjanRqa2dvemZ3c3FqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3NTk0OTksImV4cCI6MjA3ODMzNTQ5OX0.jUnvHmo5jxLCQPtqPc7S8O1S3Il8FtqMrfRMN9OsRBc';
     supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    async function checkAuth() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        window.location.href = 'login.html?redirect=admin.html';
+        return;
+      }
+      const bar = document.getElementById('user-bar');
+      if (bar) {
+        document.getElementById('user-email').textContent = session.user.email;
+        bar.style.display = 'flex';
+      }
+    }
+    checkAuth();
+
+    async function logout() {
+      await supabase.auth.signOut();
+      window.location.href = 'login.html';
+    }
   </script>
 </head>
 <body>
   <div class="container">
+    <div class="user-bar" id="user-bar">
+      <span class="user-email" id="user-email"></span>
+      <button class="logout-btn" onclick="logout()">退出</button>
+    </div>
     <div class="admin-nav">
       <button class="nav-btn active" onclick="showAdminTab('recipes', this)">📖 菜谱管理</button>
       <button class="nav-btn" onclick="showAdminTab('orders', this)">📋 今日点餐</button>

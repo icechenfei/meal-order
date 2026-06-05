@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#FF6B35">
+  <title>登录 - 今天吃什么</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script>
+    const SUPABASE_URL = 'https://yrqparacjtjkgozfwsqj.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlycXBhcmFjanRqa2dvemZ3c3FqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3NTk0OTksImV4cCI6MjA3ODMzNTQ5OX0.jUnvHmo5jxLCQPtqPc7S8O1S3Il8FtqMrfRMN9OsRBc';
+    supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  </script>
+</head>
+<body>
+  <div class="container">
+    <div class="login-page">
+      <div class="login-header">
+        <div class="login-logo">🍽️</div>
+        <h1>今天吃什么</h1>
+        <p class="subtitle">登录后即可点餐</p>
+      </div>
+      <form id="login-form" class="login-form">
+        <div class="form-group">
+          <label>邮箱</label>
+          <input type="email" id="login-email" placeholder="your@email.com" required autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label>密码</label>
+          <input type="password" id="login-password" placeholder="输入密码" required autocomplete="current-password">
+        </div>
+        <div id="login-error" class="login-error"></div>
+        <button type="submit" class="btn-primary" id="login-btn">登 录</button>
+      </form>
+    </div>
+  </div>
+  <script>
+    (async function() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const params = new URLSearchParams(window.location.search);
+        window.location.href = params.get('redirect') || 'index.html';
+        return;
+      }
+    })();
+
+    document.getElementById('login-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      const btn = document.getElementById('login-btn');
+      const errorEl = document.getElementById('login-error');
+
+      if (!email || !password) {
+        errorEl.textContent = '请输入邮箱和密码';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = '登录中...';
+      errorEl.style.display = 'none';
+
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+      btn.disabled = false;
+      btn.textContent = '登 录';
+
+      if (error) {
+        errorEl.textContent = error.message === 'Invalid login credentials' ? '邮箱或密码错误' : error.message;
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      const params = new URLSearchParams(window.location.search);
+      window.location.href = params.get('redirect') || 'index.html';
+    });
+  </script>
+</body>
+</html>

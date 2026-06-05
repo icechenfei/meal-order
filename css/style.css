@@ -763,6 +763,80 @@ body {
 }
 .empty-state p { font-size: 15px; }
 
+/* ===== User Bar ===== */
+.user-bar {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--card);
+  border-radius: 12px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+  animation: slideDown .3s ease;
+}
+.user-email {
+  font-size: 13px;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.logout-btn {
+  padding: 6px 14px;
+  border: none;
+  background: var(--bg);
+  color: var(--text-secondary);
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all .2s;
+  flex-shrink: 0;
+}
+.logout-btn:active { background: var(--border); color: var(--text); }
+
+/* ===== Login Page ===== */
+.login-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 80vh;
+  animation: fadeIn .5s ease;
+}
+.login-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+.login-logo {
+  font-size: 64px;
+  margin-bottom: 12px;
+  animation: pulse 2s ease infinite;
+}
+.login-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.login-form {
+  width: 100%;
+  max-width: 360px;
+}
+.login-form .form-group {
+  margin-bottom: 20px;
+}
+.login-error {
+  display: none;
+  background: #FFEBEE;
+  color: #D32F2F;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
 /* ===== Toast ===== */
 .toast {
   position: fixed;
