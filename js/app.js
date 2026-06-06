@@ -3,6 +3,8 @@ let currentRecipe = null;
 let recipes = [];
 let categories = [];
 let cart = [];
+let _orderCounts = {};  // { recipe_id: count }
+let _searchQuery = '';
 
 function showPage(pageId) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -34,19 +36,26 @@ async function loadRecipes() {
   const list = document.getElementById('recipe-list');
   list.innerHTML = '<div class="loading"><div class="spinner"></div><p>加载菜单中...</p></div>';
 
-  const { data, error } = await supabase
-    .from('recipes')
-    .select('*')
-    .order('created_at', { ascending: false });
+  const [recipeRes, orderRes] = await Promise.all([
+    supabase.from('recipes').select('*').order('created_at', { ascending: false }),
+    supabase.from('orders').select('recipe_id')
+  ]);
 
-  if (error) {
-    console.error(error);
+  if (recipeRes.error) {
+    console.error(recipeRes.error);
     list.innerHTML = '<div class="empty-state"><div class="emoji">😵</div><p>加载失败，请检查网络</p></div>';
     return;
   }
 
-  recipes = data || [];
+  recipes = recipeRes.data || [];
   categories = [...new Set(recipes.map(r => r.category).filter(Boolean))];
+
+  // 统计点餐次数
+  _orderCounts = {};
+  (orderRes.data || []).forEach(o => {
+    if (o.recipe_id) _orderCounts[o.recipe_id] = (_orderCounts[o.recipe_id] || 0) + 1;
+  });
+
   renderCategories();
   renderRecipes();
 }
@@ -54,10 +63,11 @@ async function loadRecipes() {
 function renderCategories() {
   const bar = document.getElementById('category-bar');
   const all = `<span class="category-tag active" data-cat="all" onclick="filterCategory('all', this)">全部</span>`;
+  const hot = `<span class="category-tag" data-cat="__hot" onclick="filterCategory('__hot', this)">🔥 常点</span>`;
   const items = categories.map(c =>
     `<span class="category-tag" data-cat="${c}" onclick="filterCategory('${c}', this)">${c}</span>`
   ).join('');
-  bar.innerHTML = all + items;
+  bar.innerHTML = all + hot + items;
 }
 
 function filterCategory(cat, el) {
@@ -68,10 +78,25 @@ function filterCategory(cat, el) {
 
 function renderRecipes(cat = 'all') {
   const list = document.getElementById('recipe-list');
-  const filtered = cat === 'all' ? recipes : recipes.filter(r => r.category === cat);
+  let filtered = recipes;
+
+  // 搜索过滤
+  if (_searchQuery) {
+    filtered = filtered.filter(r => r.name.toLowerCase().includes(_searchQuery));
+  }
+
+  // 分类过滤
+  if (cat === '__hot') {
+    filtered = filtered.filter(r => (_orderCounts[r.id] || 0) > 0);
+    filtered.sort((a, b) => (_orderCounts[b.id] || 0) - (_orderCounts[a.id] || 0));
+  } else if (cat !== 'all') {
+    filtered = filtered.filter(r => r.category === cat);
+  }
 
   if (filtered.length === 0) {
-    list.innerHTML = '<div class="empty-state"><div class="emoji">🍽️</div><p>还没有菜品，等厨师添加中...</p></div>';
+    const msg = _searchQuery ? '没有找到匹配的菜品' : '还没有菜品，等厨师添加中...';
+    const emoji = _searchQuery ? '🔍' : '🍽️';
+    list.innerHTML = `<div class="empty-state"><div class="emoji">${emoji}</div><p>${msg}</p></div>`;
     return;
   }
 
@@ -79,16 +104,28 @@ function renderRecipes(cat = 'all') {
     const img = r.image
       ? `<img src="${r.image}" alt="${r.name}" loading="lazy">`
       : '<div class="placeholder-img">🍲</div>';
+    const count = _orderCounts[r.id] || 0;
+    const countHtml = count > 0 ? `<span class="order-count-badge">${count}次</span>` : '';
     return `
       <div class="recipe-card" onclick="showDetail(${r.id})">
         ${img}
         <div class="recipe-card-info">
           <h3>${r.name}</h3>
-          <span class="category">${r.category || '其他'}</span>
+          <div class="recipe-card-meta">
+            <span class="category">${r.category || '其他'}</span>
+            ${countHtml}
+          </div>
         </div>
       </div>
     `;
   }).join('');
+}
+
+function onSearchInput() {
+  _searchQuery = document.getElementById('recipe-search').value.trim().toLowerCase();
+  const activeCat = document.querySelector('.category-tag.active');
+  const cat = activeCat ? activeCat.dataset.cat : 'all';
+  renderRecipes(cat);
 }
 
 function showDetail(id) {
