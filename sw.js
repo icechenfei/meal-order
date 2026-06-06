@@ -1,13 +1,14 @@
 const CACHE_NAME = 'meal-order-v1';
+const BASE = '/meal-order';
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/admin.html',
-  '/login.html',
-  '/css/style.css',
-  '/js/auth.js',
-  '/js/app.js',
-  '/js/admin.js'
+  BASE + '/',
+  BASE + '/index.html',
+  BASE + '/admin.html',
+  BASE + '/login.html',
+  BASE + '/css/style.css',
+  BASE + '/js/auth.js',
+  BASE + '/js/app.js',
+  BASE + '/js/admin.js'
 ];
 
 // 安装：缓存静态资源
@@ -30,10 +31,8 @@ self.addEventListener('activate', event => {
 
 // 请求策略：网络优先，失败回退缓存
 self.addEventListener('fetch', event => {
-  // 只处理 GET 请求
   if (event.request.method !== 'GET') return;
 
-  // 跳过 API 和 CDN 请求
   const url = new URL(event.request.url);
   if (url.hostname.includes('supabase') || url.hostname.includes('jsdelivr') || url.hostname.includes('github')) {
     return;
@@ -42,7 +41,6 @@ self.addEventListener('fetch', event => {
   event.respondWith(
     fetch(event.request)
       .then(response => {
-        // 成功则更新缓存
         const clone = response.clone();
         caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
         return response;
