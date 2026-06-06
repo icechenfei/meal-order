@@ -1,5 +1,7 @@
 let editingId = null;
 window._mealIngredients = [];
+let _allRecipes = [];
+let _adminCategory = '全部';
 
 function showAdminTab(tab, btn) {
   document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
@@ -21,8 +23,38 @@ async function loadAdminRecipes() {
 
   if (error) { console.error(error); list.innerHTML = ''; return; }
 
-  if (!data || data.length === 0) {
-    list.innerHTML = '<div class="empty-state"><div class="emoji">📖</div><p>还没有菜谱，点击"添加"创建</p></div>';
+  _allRecipes = data || [];
+  renderAdminCategoryBar();
+  renderAdminRecipes();
+}
+
+function renderAdminCategoryBar() {
+  const cats = [...new Set(_allRecipes.map(r => r.category || '其他'))];
+  const bar = document.getElementById('admin-category-bar');
+  if (cats.length <= 1) { bar.innerHTML = ''; return; }
+  const allCats = ['全部', ...cats];
+  bar.innerHTML = allCats.map(c =>
+    `<button class="category-tag${c === _adminCategory ? ' active' : ''}" onclick="selectAdminCategory('${c}')">${c}</button>`
+  ).join('');
+}
+
+function selectAdminCategory(cat) {
+  _adminCategory = cat;
+  document.querySelectorAll('#admin-category-bar .category-tag').forEach(t => {
+    t.classList.toggle('active', t.textContent === cat);
+  });
+  renderAdminRecipes();
+}
+
+function renderAdminRecipes() {
+  const list = document.getElementById('admin-recipe-list');
+  let data = _allRecipes;
+  if (_adminCategory !== '全部') {
+    data = data.filter(r => (r.category || '其他') === _adminCategory);
+  }
+
+  if (data.length === 0) {
+    list.innerHTML = '<div class="empty-state"><div class="emoji">📖</div><p>还没有菜谱，点击“添加”创建</p></div>';
     return;
   }
 
@@ -102,7 +134,7 @@ async function saveRecipe(e) {
     const ext = file.name.split('.').pop();
     const fileName = Date.now() + '_' + Math.random().toString(36).slice(2) + '.' + ext;
     const { error: uploadError } = await supabase.storage.from('images').upload(fileName, file);
-    if (uploadError) { toast('图片上传失败：' + uploadError.message); return; }
+    if (uploadError) { toast('图片上传失败:' + uploadError.message); return; }
     const { data: urlData } = supabase.storage.from('images').getPublicUrl(fileName);
     data.image = urlData.publicUrl;
   }
@@ -111,7 +143,7 @@ async function saveRecipe(e) {
     ? await supabase.from('recipes').update(data).eq('id', editingId)
     : await supabase.from('recipes').insert(data);
 
-  if (error) { toast('保存失败：' + error.message); return; }
+  if (error) { toast('保存失败:' + error.message); return; }
 
   closeModal();
   loadAdminRecipes();
@@ -119,11 +151,11 @@ async function saveRecipe(e) {
 }
 
 async function deleteRecipe(id) {
-  if (!confirm('确定删除这个菜谱？')) return;
+  if (!confirm('确定删除这个菜谱?')) return;
 
   const { data: r } = await supabase.from('recipes').select('image').eq('id', id).single();
   const { error } = await supabase.from('recipes').delete().eq('id', id);
-  if (error) { toast('删除失败：' + error.message); return; }
+  if (error) { toast('删除失败:' + error.message); return; }
 
   if (r?.image) {
     const path = r.image.split('/').pop();
@@ -352,7 +384,7 @@ async function loadOrders() {
   const total = orders.length;
 
   summaryEl.innerHTML = `
-    <h3>📊 今日汇总（共 ${total} 份）</h3>
+    <h3>📊 今日汇总(共 ${total} 份)</h3>
     ${Object.entries(summary).map(([name, count]) =>
       `<div class="summary-item"><span>${name}</span><span class="count">${count} 份</span></div>`
     ).join('')}
@@ -375,9 +407,9 @@ async function markMealDone(mealId) {
 }
 
 async function deleteOrder(id) {
-  if (!confirm('确定删除这条点餐记录？')) return;
+  if (!confirm('确定删除这条点餐记录?')) return;
   const { error } = await supabase.from('orders').delete().eq('id', id);
-  if (error) { toast('删除失败：' + error.message); return; }
+  if (error) { toast('删除失败:' + error.message); return; }
   loadOrders();
   toast('已删除');
 }
