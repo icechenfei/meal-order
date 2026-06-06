@@ -283,6 +283,7 @@ async function loadOrders() {
         ${noteHtml}
         <div class="order-actions">
           <button class="btn-detail" onclick="viewRecipe(${o.recipe_id})">查看做法</button>
+          ${o.status !== 'done' ? `<button class="btn-edit-order" onclick="editOrder(${o.id})">✏️ 编辑</button>` : ''}
           ${statusHtml}
           <button class="btn-delete-order" onclick="deleteOrder(${o.id})">🗑️ 删除</button>
         </div>
@@ -414,6 +415,51 @@ async function deleteOrder(id) {
   loadOrders();
   toast('已删除');
 }
+
+async function editOrder(id) {
+  const { data: order, error } = await supabase.from('orders').select('*').eq('id', id).single();
+  if (error || !order) { toast('加载失败'); return; }
+
+  // 加载菜谱列表到下拉框
+  const { data: recipes } = await supabase.from('recipes').select('id, name').order('name');
+  const select = document.getElementById('edit-order-recipe');
+  select.innerHTML = (recipes || []).map(r =>
+    `<option value="${r.id}"${r.id === order.recipe_id ? ' selected' : ''}>${r.name}</option>`
+  ).join('');
+
+  document.getElementById('edit-order-id').value = id;
+  document.getElementById('edit-order-note').value = order.note || '';
+  document.getElementById('modal-edit-order').classList.add('active');
+}
+
+async function saveEditOrder() {
+  const id = document.getElementById('edit-order-id').value;
+  const select = document.getElementById('edit-order-recipe');
+  const recipeId = parseInt(select.value);
+  const recipeName = select.options[select.selectedIndex].text;
+  const note = document.getElementById('edit-order-note').value.trim();
+
+  const { error } = await supabase.from('orders').update({
+    recipe_id: recipeId,
+    recipe_name: recipeName,
+    note: note
+  }).eq('id', id);
+
+  if (error) { toast('保存失败:' + error.message); return; }
+
+  closeEditOrderModal();
+  loadOrders();
+  toast('订单已更新');
+}
+
+function closeEditOrderModal() {
+  document.getElementById('modal-edit-order').classList.remove('active');
+}
+
+// 编辑订单弹窗点击遮罩关闭
+document.getElementById('modal-edit-order').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeEditOrderModal();
+});
 
 async function loadHistoryOrders() {
   const list = document.getElementById('history-list');

@@ -593,6 +593,8 @@ body {
 .btn-done:active { background: #C8E6C9; }
 .btn-detail { background: #FFF3E0; color: #E65100; }
 .btn-detail:active { background: #FFE0B2; }
+.btn-edit-order { background: #E3F2FD; color: #1976D2; }
+.btn-edit-order:active { background: #BBDEFB; }
 .btn-delete-order { background: #FFEBEE; color: #D32F2F; }
 .btn-delete-order:active { background: #FFCDD2; }
 
@@ -824,6 +826,21 @@ body {
   background: var(--bg);
 }
 .form-group input:focus, .form-group textarea:focus { border-color: var(--primary); }
+.form-select {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  background: var(--bg);
+  transition: border-color .2s;
+  appearance: auto;
+}
+.form-select:focus {
+  border-color: var(--primary);
+  outline: none;
+}
 .form-group textarea { resize: vertical; min-height: 80px; }
 .form-group input[type="file"] {
   padding: 10px;
@@ -1186,9 +1203,41 @@ body {
   font-size: 15px;
 }
 .history-item:last-child { border-bottom: none; }
+.history-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 .history-note {
   font-size: 13px;
   color: var(--text-secondary);
   font-style: italic;
   margin-top: 2px;
+}
+.btn-edit-sm {
+  background: #E3F2FD;
+  color: #1976D2;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background .2s;
+}
+.btn-edit-sm:active { background: #BBDEFB; }
+.status-tag {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-weight: 600;
+  vertical-align: middle;
+}
+.status-pending {
+  background: #FFF3E0;
+  color: #E65100;
+}
+.status-done-tag {
+  background: #E8F5E9;
+  color: #388E3C;
 }

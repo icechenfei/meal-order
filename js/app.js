@@ -257,53 +257,94 @@ async function loadHistory() {
   const container = document.getElementById('history-content');
   container.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
 
-  const { data: orders, error } = await supabase
-    .from('orders')
-    .select('*')
-    .eq('member', currentMember)
-    .not('meal_id', 'is', null)
-    .order('meal_date', { ascending: false });
+  // 获取今天的日期
+  const today = new Date();
+  const todayYmd = today.toISOString().split('T')[0];
 
-  if (error) {
-    console.error(error);
-    container.innerHTML = '<div class="empty-state"><div class="emoji">😵</div><p>加载失败</p></div>';
-    return;
+  // 同时获取历史订单和今日订单
+  const [historyRes, todayRes] = await Promise.all([
+    supabase.from('orders').select('*')
+      .eq('member', currentMember)
+      .not('meal_id', 'is', null)
+      .lt('created_at', todayYmd + 'T00:00:00')
+      .order('meal_date', { ascending: false }),
+    supabase.from('orders').select('*')
+      .eq('member', currentMember)
+      .gte('created_at', todayYmd + 'T00:00:00')
+      .order('created_at', { ascending: false })
+  ]);
+
+  let html = '';
+
+  // 今日订单（可编辑）
+  const todayOrders = todayRes.data || [];
+  if (todayOrders.length > 0) {
+    const pendingOrders = todayOrders.filter(o => o.status !== 'done');
+    const doneOrders = todayOrders.filter(o => o.status === 'done');
+
+    html += '<div class="history-card"><div class="history-card-header"><span class="history-date">📋 今日点餐</span></div><div class="history-items">';
+    pendingOrders.forEach(o => {
+      html += `
+        <div class="history-item">
+          <div class="history-item-row">
+            <span>🍽️ ${o.recipe_name} <span class="status-tag status-pending">待完成</span></span>
+            <button class="btn-edit-sm" onclick="editOrder(${o.id})">✏️</button>
+          </div>
+          ${o.note ? `<span class="history-note">💬 ${o.note}</span>` : ''}
+        </div>
+      `;
+    });
+    doneOrders.forEach(o => {
+      html += `
+        <div class="history-item">
+          <span>🍽️ ${o.recipe_name} <span class="status-tag status-done-tag">已完成</span></span>
+          ${o.note ? `<span class="history-note">💬 ${o.note}</span>` : ''}
+        </div>
+      `;
+    });
+    html += '</div></div>';
   }
 
-  if (!orders || orders.length === 0) {
+  // 历史订单
+  const historyOrders = historyRes.data || [];
+  if (historyOrders.length === 0 && todayOrders.length === 0) {
     container.innerHTML = '<div class="empty-state"><div class="emoji">📅</div><p>还没有历史点餐记录</p></div>';
     return;
   }
 
-  const meals = {};
-  orders.forEach(o => {
-    if (!meals[o.meal_id]) {
-      meals[o.meal_id] = { meal_id: o.meal_id, meal_date: o.meal_date, items: [] };
-    }
-    meals[o.meal_id].items.push(o);
-  });
+  if (historyOrders.length > 0) {
+    const meals = {};
+    historyOrders.forEach(o => {
+      if (!meals[o.meal_id]) {
+        meals[o.meal_id] = { meal_id: o.meal_id, meal_date: o.meal_date, items: [] };
+      }
+      meals[o.meal_id].items.push(o);
+    });
 
-  container.innerHTML = Object.values(meals).map(meal => {
-    const d = new Date(meal.meal_date);
-    const pad = n => String(n).padStart(2, '0');
-    const dateStr = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-    return `
-      <div class="history-card">
-        <div class="history-card-header">
-          <span class="history-date">${dateStr}</span>
+    Object.values(meals).forEach(meal => {
+      const d = new Date(meal.meal_date);
+      const pad = n => String(n).padStart(2, '0');
+      const dateStr = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      html += `
+        <div class="history-card">
+          <div class="history-card-header">
+            <span class="history-date">${dateStr}</span>
+          </div>
+          <div class="history-items">
+            ${meal.items.map(item => `
+              <div class="history-item">
+                <span>🍽️ ${item.recipe_name}</span>
+                ${item.note ? `<span class="history-note">💬 ${item.note}</span>` : ''}
+              </div>
+            `).join('')}
+          </div>
+          <button class="btn-secondary" onclick="reorderMeal('${meal.meal_id}')">🔄 再来一餐</button>
         </div>
-        <div class="history-items">
-          ${meal.items.map(item => `
-            <div class="history-item">
-              <span>🍽️ ${item.recipe_name}</span>
-              ${item.note ? `<span class="history-note">💬 ${item.note}</span>` : ''}
-            </div>
-          `).join('')}
-        </div>
-        <button class="btn-secondary" onclick="reorderMeal('${meal.meal_id}')">🔄 再来一餐</button>
-      </div>
-    `;
-  }).join('');
+      `;
+    });
+  }
+
+  container.innerHTML = html;
 }
 
 async function reorderMeal(mealId) {
@@ -341,5 +382,51 @@ function toast(msg) {
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 2500);
 }
+
+async function editOrder(id) {
+  const { data: order, error } = await supabase.from('orders').select('*').eq('id', id).single();
+  if (error || !order) { toast('加载失败'); return; }
+
+  // 加载菜谱列表
+  const select = document.getElementById('edit-order-recipe');
+  select.innerHTML = recipes.map(r =>
+    `<option value="${r.id}"${r.id === order.recipe_id ? ' selected' : ''}>${r.name}</option>`
+  ).join('');
+
+  document.getElementById('edit-order-id').value = id;
+  document.getElementById('edit-order-note').value = order.note || '';
+  document.getElementById('modal-edit-order').classList.add('active');
+}
+
+async function saveEditOrder() {
+  const id = document.getElementById('edit-order-id').value;
+  const select = document.getElementById('edit-order-recipe');
+  const recipeId = parseInt(select.value);
+  const recipeName = select.options[select.selectedIndex].text;
+  const note = document.getElementById('edit-order-note').value.trim();
+
+  const { error } = await supabase.from('orders').update({
+    recipe_id: recipeId,
+    recipe_name: recipeName,
+    note: note
+  }).eq('id', id);
+
+  if (error) { toast('保存失败:' + error.message); return; }
+
+  closeEditOrderModal();
+  toast('已修改');
+  // 刷新历史列表
+  const activeTab = document.querySelector('.menu-tab.active');
+  if (activeTab && activeTab.dataset.tab === 'history') loadHistory();
+}
+
+function closeEditOrderModal() {
+  document.getElementById('modal-edit-order').classList.remove('active');
+}
+
+// 编辑订单弹窗点击遮罩关闭
+document.getElementById('modal-edit-order').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeEditOrderModal();
+});
 
 initCurrentUser().then(() => loadRecipes());

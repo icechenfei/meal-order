@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#FF6B35">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="点餐">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
   <title>今天吃什么</title>
   <link rel="stylesheet" href="css/style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -94,6 +99,26 @@
       <span class="cart-float-count" id="cart-count">0</span>
     </div>
 
+    <!-- 编辑订单弹窗 -->
+    <div id="modal-edit-order" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>修改点餐</h2>
+          <button class="close-btn" onclick="closeEditOrderModal()">✕</button>
+        </div>
+        <input type="hidden" id="edit-order-id">
+        <div class="form-group">
+          <label>菜品</label>
+          <select id="edit-order-recipe" class="form-select"></select>
+        </div>
+        <div class="form-group">
+          <label>备注</label>
+          <input type="text" id="edit-order-note" placeholder="备注（少辣、多放盐…）" maxlength="100">
+        </div>
+        <button type="button" class="btn-primary" onclick="saveEditOrder()">保存</button>
+      </div>
+    </div>
+
 
   </div>
 
@@ -106,6 +131,11 @@
         if (entry) entry.style.display = 'block';
       }
     })();
+  </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
   </script>
 </body>
 </html>
