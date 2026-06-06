@@ -393,20 +393,32 @@ body {
 }
 .btn-secondary:active { background: var(--primary-light); }
 
-/* ===== Admin Two-Column Layout ===== */
-.admin-columns {
+/* ===== Admin Nav ===== */
+.admin-nav {
   display: flex;
-  gap: 16px;
+  background: var(--card);
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
 }
-.admin-col {
+.nav-btn {
   flex: 1;
-  min-width: 0;
+  padding: 12px;
+  border: none;
+  background: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .2s;
+  color: var(--text-secondary);
 }
-@media (max-width: 768px) {
-  .admin-columns {
-    flex-direction: column;
-  }
+.nav-btn.active {
+  background: var(--primary);
+  color: white;
 }
+.nav-btn:active:not(.active) { background: var(--primary-light); }
 
 .admin-header {
   display: flex;
