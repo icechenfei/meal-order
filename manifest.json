@@ -3,6 +3,7 @@
   "short_name": "点餐",
   "description": "家庭点餐系统",
   "start_url": "/meal-order/",
+  "scope": "/meal-order/",
   "display": "standalone",
   "background_color": "#FFF8F3",
   "theme_color": "#FF6B35",
