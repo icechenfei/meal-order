@@ -10,6 +10,7 @@ function showAdminTab(tab, btn) {
   btn.classList.add('active');
   if (tab === 'recipes') loadAdminRecipes();
   if (tab === 'orders') loadOrders();
+  if (tab === 'history') loadHistoryOrders();
 }
 
 async function loadAdminRecipes() {
@@ -412,6 +413,149 @@ async function deleteOrder(id) {
   if (error) { toast('删除失败:' + error.message); return; }
   loadOrders();
   toast('已删除');
+}
+
+async function loadHistoryOrders() {
+  const list = document.getElementById('history-list');
+  list.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+
+  const today = new Date();
+  const ymd = today.toISOString().split('T')[0];
+
+  const { data: orders, error } = await supabase
+    .from('orders')
+    .select('*')
+    .lt('created_at', ymd + 'T00:00:00')
+    .order('created_at', { ascending: false });
+
+  if (error) { console.error(error); list.innerHTML = ''; return; }
+
+  if (!orders || orders.length === 0) {
+    list.innerHTML = '<div class="empty-state"><div class="emoji">📅</div><p>还没有历史点餐记录</p></div>';
+    return;
+  }
+
+  // 按日期分组
+  const dateGroups = {};
+  orders.forEach(o => {
+    const dt = new Date(o.created_at);
+    const pad = n => String(n).padStart(2, '0');
+    const dateKey = `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}`;
+    if (!dateGroups[dateKey]) dateGroups[dateKey] = [];
+    dateGroups[dateKey].push(o);
+  });
+
+  let html = '';
+  Object.entries(dateGroups).forEach(([date, dayOrders]) => {
+    // 按 meal_id 分组
+    const groups = {};
+    const noMeal = [];
+    dayOrders.forEach(o => {
+      if (o.meal_id) {
+        if (!groups[o.meal_id]) {
+          groups[o.meal_id] = { meal_id: o.meal_id, meal_date: o.meal_date || o.created_at, items: [] };
+        }
+        groups[o.meal_id].items.push(o);
+      } else {
+        noMeal.push(o);
+      }
+    });
+
+    const allDone = items => items.every(i => i.status === 'done');
+    const fmt = d => {
+      const pad = n => String(n).padStart(2, '0');
+      return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    };
+
+    let dayHtml = '';
+    Object.values(groups).forEach(g => {
+      const done = allDone(g.items);
+      dayHtml += `
+        <div class="meal-group">
+          <div class="meal-group-header">
+            <span class="meal-group-time">🕐 ${fmt(new Date(g.meal_date))}</span>
+            <div class="meal-group-header-right">
+              ${done ? '<span class="status-done">✅ 全部完成</span>' : '<span class="status-pending">⏳ 未完成</span>'}
+            </div>
+          </div>
+          <div class="meal-group-items">
+            ${g.items.map(o => {
+              const statusHtml = o.status === 'done'
+                ? '<span class="status-done">✅ 已完成</span>'
+                : '<span class="status-pending">⏳ 未完成</span>';
+              const noteHtml = o.note ? `<div class="order-note">💬 ${o.note}</div>` : '';
+              return `
+                <div class="order-item">
+                  <div class="order-header">
+                    <span class="order-member">${o.member}</span>
+                  </div>
+                  <div class="order-recipe">🍽️ ${o.recipe_name}</div>
+                  ${noteHtml}
+                  <div class="order-actions">
+                    <button class="btn-detail" onclick="viewRecipe(${o.recipe_id})">查看做法</button>
+                    ${statusHtml}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    });
+
+    if (noMeal.length > 0) {
+      dayHtml += `
+        <div class="meal-group">
+          <div class="meal-group-header">
+            <span class="meal-group-time">📋 其他订单</span>
+          </div>
+          <div class="meal-group-items">
+            ${noMeal.map(o => {
+              const statusHtml = o.status === 'done'
+                ? '<span class="status-done">✅ 已完成</span>'
+                : '<span class="status-pending">⏳ 未完成</span>';
+              const noteHtml = o.note ? `<div class="order-note">💬 ${o.note}</div>` : '';
+              return `
+                <div class="order-item">
+                  <div class="order-header">
+                    <span class="order-member">${o.member}</span>
+                  </div>
+                  <div class="order-recipe">🍽️ ${o.recipe_name}</div>
+                  ${noteHtml}
+                  <div class="order-actions">
+                    <button class="btn-detail" onclick="viewRecipe(${o.recipe_id})">查看做法</button>
+                    ${statusHtml}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // 汇总
+    const summary = {};
+    dayOrders.forEach(o => {
+      if (!summary[o.recipe_name]) summary[o.recipe_name] = 0;
+      summary[o.recipe_name]++;
+    });
+
+    html += `
+      <div class="history-date-group">
+        <h2 class="history-date-title">📅 ${date}（共 ${dayOrders.length} 份）</h2>
+        ${dayHtml}
+        <div class="order-summary">
+          <h3>📊 当日汇总</h3>
+          ${Object.entries(summary).map(([name, count]) =>
+            `<div class="summary-item"><span>${name}</span><span class="count">${count} 份</span></div>`
+          ).join('')}
+        </div>
+      </div>
+    `;
+  });
+
+  list.innerHTML = html;
 }
 
 function toast(msg) {

@@ -645,6 +645,25 @@ body {
   font-weight: 500;
   font-size: 14px;
 }
+.status-pending {
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 14px;
+}
+
+/* ===== History Date Group ===== */
+.history-date-group {
+  margin-bottom: 24px;
+  animation: slideUp .3s ease;
+}
+.history-date-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--primary-light);
+}
 
 /* ===== Order Summary ===== */
 .order-summary {
