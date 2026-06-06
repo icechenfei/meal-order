@@ -393,3 +393,4 @@ function toast(msg) {
 }
 
 loadAdminRecipes();
+loadOrders();
