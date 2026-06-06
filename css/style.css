@@ -800,25 +800,33 @@ body {
 }
 
 /* ===== Admin Entry Button ===== */
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.header-row h1 {
+  margin-bottom: 0;
+}
 .admin-entry {
   display: none;
-  justify-content: center;
-  padding: 20px 0 8px;
   animation: fadeIn .4s ease;
 }
 .btn-admin {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 14px 28px;
+  gap: 6px;
+  padding: 10px 18px;
   background: var(--text);
   color: white;
-  border-radius: 12px;
-  font-size: 16px;
+  border-radius: 10px;
+  font-size: 14px;
   font-weight: 600;
   text-decoration: none;
   transition: all .2s;
   box-shadow: var(--shadow);
+  white-space: nowrap;
 }
 .btn-admin:active {
   transform: scale(0.97);

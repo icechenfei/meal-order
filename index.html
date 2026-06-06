@@ -27,7 +27,12 @@
         <div class="top-bar">
           <span class="user-email-badge" id="menu-user-email"></span>
         </div>
-        <h1>📋 今日菜单</h1>
+        <div class="header-row">
+          <h1>📋 今日菜单</h1>
+          <div class="admin-entry" id="admin-entry">
+            <a href="admin.html" class="btn-admin">🔧 厨房管理</a>
+          </div>
+        </div>
         <div class="menu-tabs">
           <button class="menu-tab active" data-tab="menu" onclick="switchMenuTab('menu', this)">📋 菜单</button>
           <button class="menu-tab" data-tab="history" onclick="switchMenuTab('history', this)">📅 历史菜单</button>
@@ -86,9 +91,7 @@
       <span class="cart-float-count" id="cart-count">0</span>
     </div>
 
-    <div class="admin-entry" id="admin-entry">
-      <a href="admin.html" class="btn-admin">🔧 厨房管理</a>
-    </div>
+
   </div>
 
   <script src="js/app.js"></script>
@@ -97,7 +100,7 @@
       await checkAuth('user');
       if (await isAdmin()) {
         const entry = document.getElementById('admin-entry');
-        if (entry) entry.style.display = 'flex';
+        if (entry) entry.style.display = 'block';
       }
     })();
   </script>
