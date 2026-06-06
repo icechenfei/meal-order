@@ -153,6 +153,42 @@ function showDetail(id) {
   document.getElementById('order-recipe-name').textContent = '🍽️ ' + r.name;
   document.getElementById('order-note').value = '';
   showPage('page-detail');
+  initDetailSwipe();
+}
+
+function initDetailSwipe() {
+  const page = document.getElementById('page-detail');
+  let startX = 0;
+  let startY = 0;
+  let swiping = false;
+
+  const onTouchStart = e => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    swiping = false;
+  };
+
+  const onTouchMove = e => {
+    const dx = e.touches[0].clientX - startX;
+    const dy = e.touches[0].clientY - startY;
+    // 水平滑动距离大于垂直时才算滑动
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 20) {
+      swiping = true;
+    }
+  };
+
+  const onTouchEnd = e => {
+    if (!swiping) return;
+    const dx = e.changedTouches[0].clientX - startX;
+    // 左滑或右滑超过 80px 都返回菜单
+    if (Math.abs(dx) > 80) {
+      showPage('page-menu');
+    }
+  };
+
+  page.addEventListener('touchstart', onTouchStart, { passive: true });
+  page.addEventListener('touchmove', onTouchMove, { passive: true });
+  page.addEventListener('touchend', onTouchEnd, { passive: true });
 }
 
 function addToCart() {
