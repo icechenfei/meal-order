@@ -205,6 +205,23 @@ function addToCart() {
   showPage('page-menu');
 }
 
+function addCustomDish() {
+  const input = document.getElementById('custom-dish-input');
+  const name = input.value.trim();
+  if (!name) {
+    toast('请输入菜名');
+    return;
+  }
+  cart.push({
+    recipe_id: null,
+    recipe_name: name,
+    note: ''
+  });
+  input.value = '';
+  updateCartFloat();
+  toast(`「${name}」已加入已点菜谱`);
+}
+
 function updateCartFloat() {
   const float = document.getElementById('cart-float');
   const count = document.getElementById('cart-count');
@@ -228,15 +245,19 @@ function renderCart() {
     return;
   }
   if (bottom) bottom.style.display = 'block';
-  list.innerHTML = cart.map((item, i) => `
+  list.innerHTML = cart.map((item, i) => {
+    const icon = item.recipe_id ? '🍽️' : '✏️';
+    const tag = item.recipe_id ? '' : ' <span class="custom-tag">自定义</span>';
+    return `
     <div class="cart-item">
       <div class="cart-item-info">
-        <h3>🍽️ ${item.recipe_name}</h3>
+        <h3>${icon} ${item.recipe_name}${tag}</h3>
         ${item.note ? `<p class="cart-item-note">💬 ${item.note}</p>` : ''}
       </div>
       <button class="cart-item-delete" onclick="removeFromCart(${i})">✕</button>
     </div>
-  `).join('');
+  `;
+  }).join('');
   document.getElementById('cart-total').textContent = `共 ${cart.length} 个菜品`;
 }
 
@@ -320,10 +341,11 @@ async function loadHistory() {
 
     html += '<div class="history-card"><div class="history-card-header"><span class="history-date">📋 今日点餐</span></div><div class="history-items">';
     pendingOrders.forEach(o => {
+      const icon = o.recipe_id ? '🍽️' : '✏️';
       html += `
         <div class="history-item">
           <div class="history-item-row">
-            <span>🍽️ ${o.recipe_name} <span class="status-tag status-pending">待完成</span></span>
+            <span>${icon} ${o.recipe_name} <span class="status-tag status-pending">待完成</span></span>
             <button class="btn-edit-sm" onclick="editOrder(${o.id})">✏️</button>
           </div>
           ${o.note ? `<span class="history-note">💬 ${o.note}</span>` : ''}
@@ -331,9 +353,10 @@ async function loadHistory() {
       `;
     });
     doneOrders.forEach(o => {
+      const icon = o.recipe_id ? '🍽️' : '✏️';
       html += `
         <div class="history-item">
-          <span>🍽️ ${o.recipe_name} <span class="status-tag status-done-tag">已完成</span></span>
+          <span>${icon} ${o.recipe_name} <span class="status-tag status-done-tag">已完成</span></span>
           ${o.note ? `<span class="history-note">💬 ${o.note}</span>` : ''}
         </div>
       `;
@@ -367,12 +390,15 @@ async function loadHistory() {
             <span class="history-date">${dateStr}</span>
           </div>
           <div class="history-items">
-            ${meal.items.map(item => `
+            ${meal.items.map(item => {
+              const icon = item.recipe_id ? '🍽️' : '✏️';
+              return `
               <div class="history-item">
-                <span>🍽️ ${item.recipe_name}</span>
+                <span>${icon} ${item.recipe_name}</span>
                 ${item.note ? `<span class="history-note">💬 ${item.note}</span>` : ''}
               </div>
-            `).join('')}
+            `;
+            }).join('')}
           </div>
           <button class="btn-secondary" onclick="reorderMeal('${meal.meal_id}')">🔄 再来一餐</button>
         </div>
@@ -423,23 +449,49 @@ async function editOrder(id) {
   const { data: order, error } = await supabase.from('orders').select('*').eq('id', id).single();
   if (error || !order) { toast('加载失败'); return; }
 
-  // 加载菜谱列表
   const select = document.getElementById('edit-order-recipe');
-  select.innerHTML = recipes.map(r =>
+  const customInput = document.getElementById('edit-order-custom');
+  const isCustom = !order.recipe_id;
+
+  select.innerHTML = `<option value="__custom">✏️ 自定义输入</option>` + recipes.map(r =>
     `<option value="${r.id}"${r.id === order.recipe_id ? ' selected' : ''}>${r.name}</option>`
   ).join('');
+
+  if (isCustom) {
+    select.value = '__custom';
+    customInput.value = order.recipe_name;
+    customInput.style.display = 'block';
+  } else {
+    customInput.style.display = 'none';
+    customInput.value = '';
+  }
 
   document.getElementById('edit-order-id').value = id;
   document.getElementById('edit-order-note').value = order.note || '';
   document.getElementById('modal-edit-order').classList.add('active');
 }
 
+function toggleEditCustom() {
+  const select = document.getElementById('edit-order-recipe');
+  const customInput = document.getElementById('edit-order-custom');
+  customInput.style.display = select.value === '__custom' ? 'block' : 'none';
+}
+
 async function saveEditOrder() {
   const id = document.getElementById('edit-order-id').value;
   const select = document.getElementById('edit-order-recipe');
-  const recipeId = parseInt(select.value);
-  const recipeName = select.options[select.selectedIndex].text;
+  const customInput = document.getElementById('edit-order-custom');
   const note = document.getElementById('edit-order-note').value.trim();
+
+  let recipeId, recipeName;
+  if (select.value === '__custom') {
+    recipeName = customInput.value.trim();
+    if (!recipeName) { toast('请输入菜名'); return; }
+    recipeId = null;
+  } else {
+    recipeId = parseInt(select.value);
+    recipeName = select.options[select.selectedIndex].text;
+  }
 
   const { error } = await supabase.from('orders').update({
     recipe_id: recipeId,
@@ -451,7 +503,6 @@ async function saveEditOrder() {
 
   closeEditOrderModal();
   toast('已修改');
-  // 刷新历史列表
   const activeTab = document.querySelector('.menu-tab.active');
   if (activeTab && activeTab.dataset.tab === 'history') loadHistory();
 }
@@ -466,3 +517,8 @@ document.getElementById('modal-edit-order').addEventListener('click', e => {
 });
 
 initCurrentUser().then(() => loadRecipes());
+
+// 自定义菜品输入框回车提交
+document.getElementById('custom-dish-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); addCustomDish(); }
+});

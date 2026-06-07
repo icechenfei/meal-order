@@ -166,6 +166,42 @@ body {
 }
 .custom-member button:active { background: var(--primary-dark); }
 
+/* ===== Custom Dish Bar ===== */
+.custom-dish-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  animation: slideUp .3s ease;
+}
+.custom-dish-bar input {
+  flex: 1;
+  padding: 12px 14px;
+  border: 2px solid var(--primary);
+  border-radius: 12px;
+  font-size: 15px;
+  background: var(--card);
+  transition: border-color .2s;
+}
+.custom-dish-bar input:focus {
+  border-color: var(--primary-dark);
+  outline: none;
+}
+.custom-dish-btn {
+  padding: 12px 18px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .2s;
+}
+.custom-dish-btn:active {
+  background: var(--primary-dark);
+}
+
 /* ===== Search Bar ===== */
 .search-bar {
   margin-bottom: 10px;
@@ -1158,6 +1194,15 @@ body {
   transition: background .2s;
 }
 .cart-item-delete:active { background: #FFCDD2; }
+.custom-tag {
+  font-size: 11px;
+  color: var(--primary);
+  background: var(--primary-light);
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-weight: 600;
+  vertical-align: middle;
+}
 
 .cart-bottom {
   background: var(--card);

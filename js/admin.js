@@ -273,16 +273,19 @@ async function loadOrders() {
       ? '<span class="status-done">✅ 已完成</span>'
       : `<button class="btn-done" onclick="markDone(${o.id})">✅ 完成</button>`;
     const noteHtml = o.note ? `<div class="order-note">💬 ${o.note}</div>` : '';
+    const icon = o.recipe_id ? '🍽️' : '✏️';
+    const tag = o.recipe_id ? '' : ' <span class="custom-tag">自定义</span>';
+    const viewBtn = o.recipe_id ? `<button class="btn-detail" onclick="viewRecipe(${o.recipe_id})">查看做法</button>` : '';
     return `
       <div class="order-item">
         <div class="order-header">
           <span class="order-member">${o.member}</span>
           <span class="order-time">${time}</span>
         </div>
-        <div class="order-recipe">🍽️ ${o.recipe_name}</div>
+        <div class="order-recipe">${icon} ${o.recipe_name}${tag}</div>
         ${noteHtml}
         <div class="order-actions">
-          <button class="btn-detail" onclick="viewRecipe(${o.recipe_id})">查看做法</button>
+          ${viewBtn}
           ${o.status !== 'done' ? `<button class="btn-edit-order" onclick="editOrder(${o.id})">✏️ 编辑</button>` : ''}
           ${statusHtml}
           <button class="btn-delete-order" onclick="deleteOrder(${o.id})">🗑️ 删除</button>
@@ -420,24 +423,50 @@ async function editOrder(id) {
   const { data: order, error } = await supabase.from('orders').select('*').eq('id', id).single();
   if (error || !order) { toast('加载失败'); return; }
 
-  // 加载菜谱列表到下拉框
   const { data: recipes } = await supabase.from('recipes').select('id, name').order('name');
   const select = document.getElementById('edit-order-recipe');
-  select.innerHTML = (recipes || []).map(r =>
+  const customInput = document.getElementById('edit-order-custom');
+  const isCustom = !order.recipe_id;
+
+  select.innerHTML = `<option value="__custom">✏️ 自定义输入</option>` + (recipes || []).map(r =>
     `<option value="${r.id}"${r.id === order.recipe_id ? ' selected' : ''}>${r.name}</option>`
   ).join('');
+
+  if (isCustom) {
+    select.value = '__custom';
+    customInput.value = order.recipe_name;
+    customInput.style.display = 'block';
+  } else {
+    customInput.style.display = 'none';
+    customInput.value = '';
+  }
 
   document.getElementById('edit-order-id').value = id;
   document.getElementById('edit-order-note').value = order.note || '';
   document.getElementById('modal-edit-order').classList.add('active');
 }
 
+function toggleEditCustom() {
+  const select = document.getElementById('edit-order-recipe');
+  const customInput = document.getElementById('edit-order-custom');
+  customInput.style.display = select.value === '__custom' ? 'block' : 'none';
+}
+
 async function saveEditOrder() {
   const id = document.getElementById('edit-order-id').value;
   const select = document.getElementById('edit-order-recipe');
-  const recipeId = parseInt(select.value);
-  const recipeName = select.options[select.selectedIndex].text;
+  const customInput = document.getElementById('edit-order-custom');
   const note = document.getElementById('edit-order-note').value.trim();
+
+  let recipeId, recipeName;
+  if (select.value === '__custom') {
+    recipeName = customInput.value.trim();
+    if (!recipeName) { toast('请输入菜名'); return; }
+    recipeId = null;
+  } else {
+    recipeId = parseInt(select.value);
+    recipeName = select.options[select.selectedIndex].text;
+  }
 
   const { error } = await supabase.from('orders').update({
     recipe_id: recipeId,
@@ -530,15 +559,18 @@ async function loadHistoryOrders() {
                 ? '<span class="status-done">✅ 已完成</span>'
                 : '<span class="status-pending">⏳ 未完成</span>';
               const noteHtml = o.note ? `<div class="order-note">💬 ${o.note}</div>` : '';
+              const icon = o.recipe_id ? '🍽️' : '✏️';
+              const tag = o.recipe_id ? '' : ' <span class="custom-tag">自定义</span>';
+              const viewBtn = o.recipe_id ? `<button class="btn-detail" onclick="viewRecipe(${o.recipe_id})">查看做法</button>` : '';
               return `
                 <div class="order-item">
                   <div class="order-header">
                     <span class="order-member">${o.member}</span>
                   </div>
-                  <div class="order-recipe">🍽️ ${o.recipe_name}</div>
+                  <div class="order-recipe">${icon} ${o.recipe_name}${tag}</div>
                   ${noteHtml}
                   <div class="order-actions">
-                    <button class="btn-detail" onclick="viewRecipe(${o.recipe_id})">查看做法</button>
+                    ${viewBtn}
                     ${statusHtml}
                   </div>
                 </div>
@@ -561,15 +593,18 @@ async function loadHistoryOrders() {
                 ? '<span class="status-done">✅ 已完成</span>'
                 : '<span class="status-pending">⏳ 未完成</span>';
               const noteHtml = o.note ? `<div class="order-note">💬 ${o.note}</div>` : '';
+              const icon = o.recipe_id ? '🍽️' : '✏️';
+              const tag = o.recipe_id ? '' : ' <span class="custom-tag">自定义</span>';
+              const viewBtn = o.recipe_id ? `<button class="btn-detail" onclick="viewRecipe(${o.recipe_id})">查看做法</button>` : '';
               return `
                 <div class="order-item">
                   <div class="order-header">
                     <span class="order-member">${o.member}</span>
                   </div>
-                  <div class="order-recipe">🍽️ ${o.recipe_name}</div>
+                  <div class="order-recipe">${icon} ${o.recipe_name}${tag}</div>
                   ${noteHtml}
                   <div class="order-actions">
-                    <button class="btn-detail" onclick="viewRecipe(${o.recipe_id})">查看做法</button>
+                    ${viewBtn}
                     ${statusHtml}
                   </div>
                 </div>

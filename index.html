@@ -44,6 +44,10 @@
         </div>
       </div>
       <div id="menu-content" class="menu-section active">
+        <div class="custom-dish-bar">
+          <input type="text" id="custom-dish-input" placeholder="✏️ 输入想吃的菜名..." maxlength="50">
+          <button class="custom-dish-btn" onclick="addCustomDish()">+ 加入</button>
+        </div>
         <div class="search-bar">
           <input type="text" id="recipe-search" placeholder="🔍 搜索菜品..." oninput="onSearchInput()">
         </div>
@@ -109,7 +113,8 @@
         <input type="hidden" id="edit-order-id">
         <div class="form-group">
           <label>菜品</label>
-          <select id="edit-order-recipe" class="form-select"></select>
+          <select id="edit-order-recipe" class="form-select" onchange="toggleEditCustom()"></select>
+          <input type="text" id="edit-order-custom" placeholder="输入自定义菜名" maxlength="50" style="display:none;margin-top:8px;">
         </div>
         <div class="form-group">
           <label>备注</label>
