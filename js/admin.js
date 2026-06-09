@@ -261,6 +261,52 @@ function closeAutoImageModal() {
   document.getElementById('modal-auto-image').classList.remove('active');
 }
 
+async function batchAutoImage() {
+  const noImage = _allRecipes.filter(r => !r.image);
+  if (noImage.length === 0) {
+    toast('所有菜谱都有图片了');
+    return;
+  }
+
+  if (!confirm(`有 ${noImage.length} 个菜谱没有图片，是否批量配图？`)) return;
+
+  let success = 0;
+  let fail = 0;
+
+  for (const recipe of noImage) {
+    try {
+      const res = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(recipe.name + ' 菜 食物')}&per_page=1&orientation=squarish`, {
+        headers: { 'Authorization': `Client-ID ${UNSPLASH_ACCESS_KEY}` }
+      });
+      const data = await res.json();
+
+      if (!data.results || data.results.length === 0) { fail++; continue; }
+
+      const imgUrl = data.results[0].urls.regular;
+      const imgRes = await fetch(imgUrl);
+      const blob = await imgRes.blob();
+      const file = new File([blob], 'recipe.jpg', { type: 'image/jpeg' });
+
+      const fileName = Date.now() + '_' + Math.random().toString(36).slice(2) + '.jpg';
+      const { error: uploadError } = await supabase.storage.from('images').upload(fileName, file);
+      if (uploadError) { fail++; continue; }
+
+      const { data: urlData } = supabase.storage.from('images').getPublicUrl(fileName);
+      await supabase.from('recipes').update({ image: urlData.publicUrl }).eq('id', recipe.id);
+
+      success++;
+      // 避免触发 Unsplash 速率限制
+      await new Promise(r => setTimeout(r, 500));
+    } catch (e) {
+      console.error(`配图失败: ${recipe.name}`, e);
+      fail++;
+    }
+  }
+
+  toast(`配图完成：成功 ${success}，失败 ${fail}`);
+  loadAdminRecipes();
+}
+
 function previewImage(input) {
   const preview = document.getElementById('image-preview');
   if (input.files[0]) {
