@@ -191,32 +191,46 @@ function initDetailSwipe() {
   page.addEventListener('touchend', onTouchEnd, { passive: true });
 }
 
-function addToCart() {
+async function loadCart() {
+  const { data, error } = await supabase.from('cart_items').select('*').eq('member', currentMember).order('created_at');
+  if (!error && data) {
+    cart = data.map(d => ({ id: d.id, recipe_id: d.recipe_id, recipe_name: d.recipe_name, note: d.note || '' }));
+  }
+  updateCartFloat();
+}
+
+async function addToCart() {
   if (!currentRecipe) return;
   const note = document.getElementById('order-note').value.trim();
-  cart.push({
+  const { data, error } = await supabase.from('cart_items').insert({
+    member: currentMember,
     recipe_id: currentRecipe.id,
     recipe_name: currentRecipe.name,
     note: note
-  });
+  }).select().single();
+  if (error) { toast('加入失败：' + error.message); return; }
+  cart.push({ id: data.id, recipe_id: data.recipe_id, recipe_name: data.recipe_name, note: data.note || '' });
   updateCartFloat();
   document.getElementById('order-note').value = '';
   toast('已加入已点菜谱');
   showPage('page-menu');
 }
 
-function addCustomDish() {
+async function addCustomDish() {
   const input = document.getElementById('custom-dish-input');
   const name = input.value.trim();
   if (!name) {
     toast('请输入菜名');
     return;
   }
-  cart.push({
+  const { data, error } = await supabase.from('cart_items').insert({
+    member: currentMember,
     recipe_id: null,
     recipe_name: name,
     note: ''
-  });
+  }).select().single();
+  if (error) { toast('加入失败：' + error.message); return; }
+  cart.push({ id: data.id, recipe_id: data.recipe_id, recipe_name: data.recipe_name, note: data.note || '' });
   input.value = '';
   updateCartFloat();
   toast(`「${name}」已加入已点菜谱`);
@@ -261,7 +275,11 @@ function renderCart() {
   document.getElementById('cart-total').textContent = `共 ${cart.length} 个菜品`;
 }
 
-function removeFromCart(index) {
+async function removeFromCart(index) {
+  const item = cart[index];
+  if (item.id) {
+    await supabase.from('cart_items').delete().eq('id', item.id);
+  }
   cart.splice(index, 1);
   updateCartFloat();
   renderCart();
@@ -289,16 +307,19 @@ async function submitCart() {
 
   const { error } = await supabase.from('orders').insert(orders);
 
-  btn.disabled = false;
-  btn.textContent = '合并提交';
-
   if (error) {
+    btn.disabled = false;
+    btn.textContent = '合并提交';
     toast('提交失败：' + error.message);
     return;
   }
 
+  // 提交成功后清空购物车
+  await supabase.from('cart_items').delete().eq('member', currentMember);
   cart = [];
   updateCartFloat();
+  btn.disabled = false;
+  btn.textContent = '合并提交';
   showPage('page-success');
 }
 
@@ -421,12 +442,18 @@ async function reorderMeal(mealId) {
     return;
   }
 
-  orders.forEach(o => {
-    cart.push({
-      recipe_id: o.recipe_id,
-      recipe_name: o.recipe_name,
-      note: o.note || ''
-    });
+  const inserts = orders.map(o => ({
+    member: currentMember,
+    recipe_id: o.recipe_id,
+    recipe_name: o.recipe_name,
+    note: o.note || ''
+  }));
+
+  const { data: inserted, error: insertError } = await supabase.from('cart_items').insert(inserts).select();
+  if (insertError) { toast('加入失败：' + insertError.message); return; }
+
+  inserted.forEach(d => {
+    cart.push({ id: d.id, recipe_id: d.recipe_id, recipe_name: d.recipe_name, note: d.note || '' });
   });
 
   updateCartFloat();
@@ -516,7 +543,7 @@ document.getElementById('modal-edit-order').addEventListener('click', e => {
   if (e.target === e.currentTarget) closeEditOrderModal();
 });
 
-initCurrentUser().then(() => loadRecipes());
+initCurrentUser().then(() => { loadCart(); loadRecipes(); });
 
 // 自定义菜品输入框回车提交
 document.getElementById('custom-dish-input').addEventListener('keydown', e => {
