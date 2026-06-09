@@ -4,6 +4,8 @@ let _allRecipes = [];
 let _adminCategory = '全部';
 let _adminSearchQuery = '';
 let _ordersChannel = null;
+let _ordersRealtimeOk = false;
+let _ordersPollTimer = null;
 
 function showAdminTab(tab, btn) {
   document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
@@ -20,14 +22,35 @@ function showAdminTab(tab, btn) {
 
 function subscribeOrdersRealtime() {
   if (_ordersChannel) return;
-  _ordersChannel = supabase.channel('orders-realtime')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
-      const ordersTab = document.getElementById('tab-orders');
-      if (ordersTab && ordersTab.classList.contains('active')) {
-        loadOrders();
-      }
-    })
-    .subscribe();
+  let lastCount = -1;
+
+  // 尝试 Supabase Realtime
+  try {
+    _ordersChannel = supabase.channel('orders-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
+        const ordersTab = document.getElementById('tab-orders');
+        if (ordersTab && ordersTab.classList.contains('active')) {
+          loadOrders();
+        }
+      })
+      .subscribe((status) => {
+        // Realtime 连接成功后标记
+        if (status === 'SUBSCRIBED') _ordersRealtimeOk = true;
+      });
+  } catch (e) {
+    console.warn('Realtime 不可用，使用轮询', e);
+  }
+
+  // 轮询兜底：每 10 秒检查订单数量变化
+  _ordersPollTimer = setInterval(async () => {
+    const ordersTab = document.getElementById('tab-orders');
+    if (!ordersTab || !ordersTab.classList.contains('active')) return;
+    const today = new Date().toISOString().split('T')[0];
+    const { count } = await supabase.from('orders').select('*', { count: 'exact', head: true })
+      .gte('created_at', today + 'T00:00:00');
+    if (lastCount !== -1 && count !== lastCount) loadOrders();
+    lastCount = count;
+  }, 10000);
 }
 
 async function loadAdminRecipes() {
