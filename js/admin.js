@@ -210,11 +210,38 @@ async function autoImage() {
   if (!fullName) { toast('请先输入菜名'); return; }
 
   const dishName = extractDishName(fullName);
+  const ingredients = document.getElementById('recipe-ingredients').value.trim();
+  const steps = document.getElementById('recipe-steps').value.trim();
+
   const list = document.getElementById('auto-image-list');
   list.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
   document.getElementById('modal-auto-image').classList.add('active');
 
-  const prompt = `一碗${dishName}，中式家常菜，白瓷碗盛装，表面油亮有光泽，点缀少许葱花，木制餐桌，暖色自然光，食物摄影，4K超高清，浅景深，逼真写实`;
+  // 根据菜名、配菜、做法生成提示词
+  let prompt = `一道中式家常菜「${dishName}」`;
+  if (ingredients) {
+    const ingList = ingredients.split('\n').map(s => s.trim()).filter(Boolean).slice(0, 5).join('、');
+    prompt += `，主要食材：${ingList}`;
+  }
+  if (steps) {
+    const cookingMethods = [];
+    if (steps.includes('炒') || steps.includes('翻炒')) cookingMethods.push('大火翻炒');
+    if (steps.includes('炖') || steps.includes('焖')) cookingMethods.push('慢炖焖煮');
+    if (steps.includes('蒸')) cookingMethods.push('清蒸');
+    if (steps.includes('炸') || steps.includes('油炸')) cookingMethods.push('油炸');
+    if (steps.includes('烤')) cookingMethods.push('烤制');
+    if (steps.includes('凉拌') || steps.includes('拌')) cookingMethods.push('凉拌');
+    if (steps.includes('红烧')) cookingMethods.push('红烧');
+    if (steps.includes('糖醋')) cookingMethods.push('糖醋');
+    if (steps.includes('麻辣') || steps.includes('辣椒') || steps.includes('花椒')) cookingMethods.push('麻辣');
+    if (steps.includes('蒜') || steps.includes('蒜末') || steps.includes('蒜蓉')) cookingMethods.push('蒜香');
+    if (cookingMethods.length > 0) {
+      prompt += `，烹饪方式：${cookingMethods.join('、')}`;
+    }
+  }
+  prompt += `。成品盛盘，色泽诱人，表面油亮，点缀葱花，木制餐桌，暖色自然光，食物摄影，4K超高清，浅景深，逼真写实`;
+
+  console.log('Seedream prompt:', prompt);
 
   try {
     const res = await fetch(SEEDREAM_ENDPOINT, {
