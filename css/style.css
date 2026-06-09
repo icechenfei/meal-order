@@ -509,20 +509,6 @@ body {
   transition: background .2s;
 }
 .btn-add:active { background: var(--primary-dark); }
-.btn-batch-image {
-  padding: 10px 20px;
-  background: var(--success);
-  color: white;
-  border: none;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  margin-left: 8px;
-  transition: background .2s;
-}
-.btn-batch-image:active { background: #1e8449; }
-
 /* ===== Admin Recipe List ===== */
 .admin-recipe-item {
   background: var(--card);
