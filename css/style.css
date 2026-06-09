@@ -1295,3 +1295,17 @@ body {
   margin-left: 8px;
   white-space: nowrap;
 }
+.btn-notify {
+  font-size: 12px;
+  padding: 2px 10px;
+  border: 1px solid #FF6B35;
+  color: #FF6B35;
+  background: transparent;
+  border-radius: 12px;
+  cursor: pointer;
+  margin-left: 8px;
+}
+.btn-notify:active {
+  background: #FF6B35;
+  color: #fff;
+}

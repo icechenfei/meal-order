@@ -22,9 +22,12 @@ function subscribeOrdersRealtime() {
   if (_ordersChannel) return;
   const badge = document.getElementById('realtime-badge');
 
-  // 请求通知权限
-  if ('Notification' in window && Notification.permission === 'default') {
-    Notification.requestPermission();
+  // 显示通知按钮（未授权时）
+  const btnNotify = document.getElementById('btn-notify');
+  if ('Notification' in window && Notification.permission !== 'granted' && btnNotify) {
+    btnNotify.style.display = 'inline-block';
+  } else if (btnNotify) {
+    btnNotify.style.display = 'none';
   }
 
   _ordersChannel = supabase.channel('orders-realtime')
@@ -46,6 +49,21 @@ function subscribeOrdersRealtime() {
         if (badge) badge.textContent = '🔴 连接失败';
       }
     });
+}
+
+async function enableNotifications() {
+  if (!('Notification' in window)) {
+    toast('当前浏览器不支持通知');
+    return;
+  }
+  const result = await Notification.requestPermission();
+  const btn = document.getElementById('btn-notify');
+  if (result === 'granted') {
+    if (btn) btn.style.display = 'none';
+    toast('通知已开启，有新订单会提醒你');
+  } else {
+    toast('通知被拒绝，请在浏览器设置中开启');
+  }
 }
 
 function sendOrderNotification(order) {
