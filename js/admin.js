@@ -3,7 +3,7 @@ window._mealIngredients = [];
 let _allRecipes = [];
 let _adminCategory = '全部';
 let _adminSearchQuery = '';
-let _ordersChannel = null;
+
 
 function showAdminTab(tab, btn) {
   document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
@@ -11,37 +11,9 @@ function showAdminTab(tab, btn) {
   document.getElementById('tab-' + tab).classList.add('active');
   btn.classList.add('active');
   if (tab === 'recipes') loadAdminRecipes();
-  if (tab === 'orders') {
-    loadOrders();
-    subscribeOrdersRealtime();
-  }
+  if (tab === 'orders') loadOrders();
   if (tab === 'history') loadHistoryOrders();
 }
-
-function subscribeOrdersRealtime() {
-  if (_ordersChannel) return;
-  const badge = document.getElementById('realtime-badge');
-
-
-
-  _ordersChannel = supabase.channel('orders-realtime')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
-      const ordersTab = document.getElementById('tab-orders');
-      if (ordersTab && ordersTab.classList.contains('active')) {
-        loadOrders();
-        if (badge) badge.textContent = '🟢 实时 ' + new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      }
-    })
-    .subscribe((status) => {
-      if (status === 'SUBSCRIBED') {
-        if (badge) badge.textContent = '🟢 实时已连接';
-      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-        if (badge) badge.textContent = '🔴 连接失败';
-      }
-    });
-}
-
-
 
 async function loadAdminRecipes() {
   const list = document.getElementById('admin-recipe-list');
