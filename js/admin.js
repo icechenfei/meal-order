@@ -199,56 +199,92 @@ async function viewRecipe(id) {
   document.getElementById('modal-detail').classList.add('active');
 }
 
-let _autoImagePage = 1;
-
 function extractDishName(input) {
-  // 去掉常见前缀：人名 + 的/老师/大厨 等
   let name = input.replace(/^[\u4e00-\u9fa5]{1,4}(老师|大厨|师傅|的|家的)/, '');
-  // 如果没去掉前缀，尝试取最后的菜名部分（2-6个字的常见菜名）
   const match = name.match(/[\u4e00-\u9fa5]{2,6}$/);
   return match ? match[0] : name || input;
 }
 
-async function autoImage(newSearch) {
+async function autoImage() {
   const fullName = document.getElementById('recipe-name').value.trim();
   if (!fullName) { toast('请先输入菜名'); return; }
 
-  if (newSearch) _autoImagePage = 1;
-
   const dishName = extractDishName(fullName);
-  const searchQuery = `${dishName} Chinese food dish`;  // 偏向中国菜系
-
   const list = document.getElementById('auto-image-list');
   list.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
   document.getElementById('modal-auto-image').classList.add('active');
 
+  const prompt = `一碗${dishName}，中式家常菜，白瓷碗盛装，表面油亮有光泽，点缀少许葱花，木制餐桌，暖色自然光，食物摄影，4K超高清，浅景深，逼真写实`;
+
   try {
-    const query = encodeURIComponent(searchQuery);
-    const res = await fetch(`https://api.unsplash.com/search/photos?query=${query}&per_page=8&orientation=squarish&page=${_autoImagePage}`, {
-      headers: { 'Authorization': `Client-ID ${UNSPLASH_ACCESS_KEY}` }
+    const res = await fetch(SEEDREAM_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SEEDREAM_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'doubao-seedream-4-5-251128',
+        prompt: prompt,
+        sequential_image_generation: 'disabled',
+        response_format: 'url',
+        size: '1024x1024',
+        stream: false,
+        watermark: false
+      })
     });
+
     const data = await res.json();
 
-    if (data.errors) {
-      list.innerHTML = `<div class="empty-state"><p>API 错误：${data.errors[0]}</p></div>`;
+    if (data.error) {
+      list.innerHTML = `<div class="empty-state"><p>生成失败：${data.error.message || '未知错误'}</p></div>`;
       return;
     }
 
-    if (!data.results || data.results.length === 0) {
-      list.innerHTML = `<div class="empty-state"><p>没有找到「${dishName}」的图片</p></div>`;
+    if (!data.data || data.data.length === 0) {
+      list.innerHTML = '<div class="empty-state"><p>生成失败，请重试</p></div>';
       return;
     }
 
-    list.innerHTML = data.results.map(img =>
-      `<div class="auto-image-item" onclick="selectAutoImage('${img.urls.regular}')">
-        <img src="${img.urls.small}" alt="${img.alt_description || dishName}" loading="lazy">
-      </div>`
-    ).join('') + `
-      <div class="auto-image-refresh" onclick="_autoImagePage++;autoImage(false)">🔄 换一批</div>
+    list.innerHTML = `
+      <div class="auto-image-result">
+        <img src="${data.data[0].url}" alt="${dishName}">
+        <div class="auto-image-actions">
+          <button class="btn-auto-accept" onclick="acceptGeneratedImage('${data.data[0].url}')">✅ 使用这张</button>
+          <button class="btn-auto-retry" onclick="autoImage()">🔄 重新生成</button>
+        </div>
+      </div>
     `;
   } catch (e) {
-    console.error('Unsplash 搜索失败:', e);
-    list.innerHTML = '<div class="empty-state"><p>搜索失败，请重试</p></div>';
+    console.error('Seedream 生成失败:', e);
+    list.innerHTML = '<div class="empty-state"><p>生成失败，请重试</p></div>';
+  }
+}
+
+async function acceptGeneratedImage(url) {
+  closeAutoImageModal();
+  toast('正在上传图片...');
+
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const file = new File([blob], 'recipe.jpg', { type: 'image/jpeg' });
+
+    const fileName = Date.now() + '_' + Math.random().toString(36).slice(2) + '.jpg';
+    const { error } = await supabase.storage.from('images').upload(fileName, file);
+    if (error) { toast('上传失败：' + error.message); return; }
+
+    const { data: urlData } = supabase.storage.from('images').getPublicUrl(fileName);
+
+    const preview = document.getElementById('image-preview');
+    preview.src = urlData.publicUrl;
+    preview.style.display = 'block';
+
+    window._autoImageUrl = urlData.publicUrl;
+    toast('配图成功');
+  } catch (e) {
+    console.error('上传失败:', e);
+    toast('上传失败，请重试');
   }
 }
 

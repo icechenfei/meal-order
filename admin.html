@@ -20,7 +20,8 @@
   <script src="js/auth.js"></script>
   <script src="js/common.js"></script>
   <script>
-    const UNSPLASH_ACCESS_KEY = 'bBS0AwbOY_R-a_G1pTJpOgawMFl_NLiX4it8XK-vVh8';
+    const SEEDREAM_API_KEY = 'ark-82…d79c';
+    const SEEDREAM_ENDPOINT = 'https://ark.cn-beijing.volces.com/api/v3/images/generations';
   </script>
 </head>
 <body>
@@ -96,7 +97,7 @@
             <label>图片</label>
             <div class="image-upload-row">
               <input type="file" id="recipe-image" accept="image/*" onchange="previewImage(this)">
-              <button type="button" class="btn-auto-image" onclick="autoImage(true)">🔍 自动配图</button>
+              <button type="button" class="btn-auto-image" onclick="autoImage()">🎨 AI 配图</button>
             </div>
             <img id="image-preview" class="image-preview" style="display:none">
           </div>
