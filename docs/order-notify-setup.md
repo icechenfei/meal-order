@@ -1,8 +1,8 @@
-# 订单微信推送配置说明
+# 订单推送配置说明
 
 ## 功能说明
 
-当有新订单时，自动通过 Server酱 推送微信通知。
+当有新订单时，自动通过企业微信群机器人 Webhook 推送通知。
 
 ## 部署步骤
 
@@ -32,19 +32,13 @@ cd /root/.openclaw/workspace/meal-order
 supabase link --project-ref yrqparacjtjkgozfwsqj
 ```
 
-### 4. 设置环境变量（Server酱 SendKey）
-
-```bash
-supabase secrets set SERVERCHAN_KEY=SCT359972TrY73KaGM1ZitxkVflVlGMAk2
-```
-
-### 5. 部署 Edge Function
+### 4. 部署 Edge Function
 
 ```bash
 supabase functions deploy order-notify
 ```
 
-### 6. 创建 Database Webhook
+### 5. 创建 Database Webhook
 
 在 Supabase Dashboard 中操作：
 
@@ -65,7 +59,7 @@ supabase functions deploy order-notify
 ## 测试
 
 1. 在点餐系统提交一个订单
-2. 检查微信是否收到通知
+2. 检查企业微信群是否收到通知
 3. 查看 Supabase Edge Function 日志：
    ```bash
    supabase functions logs order-notify
@@ -73,21 +67,17 @@ supabase functions deploy order-notify
 
 ## 消息格式
 
-```
-🍽️ 新订单：菜品名
-
-点餐人：xxx@xxx.com
-菜品：xxx
-备注：xxx（如果有）
-
----
-来自家庭点餐系统
+```markdown
+### 🍽️ 新订单：红烧肉
+> **点餐人**：xxx@xxx.com
+> **菜品**：红烧肉
+> **备注**：少放盐（如果有）
 ```
 
 ## 注意事项
 
-1. Server酱免费版每天限制 5 条消息，家庭使用足够
-2. 如果需要更多消息额度，可以升级 Server酱 或换用 PushPlus
+1. 企业微信群机器人 Webhook 无频率限制，家庭使用完全够用
+2. Webhook Key 已硬编码在 Edge Function 中，无需额外配置环境变量
 3. Edge Function 有免费额度，每月 50 万次调用
 4. 确保 supabase service_role key 安全，不要泄露
 
