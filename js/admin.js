@@ -31,15 +31,11 @@ function subscribeOrdersRealtime() {
   }
 
   _ordersChannel = supabase.channel('orders-realtime')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, (payload) => {
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
       const ordersTab = document.getElementById('tab-orders');
       if (ordersTab && ordersTab.classList.contains('active')) {
         loadOrders();
         if (badge) badge.textContent = '🟢 实时 ' + new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      }
-      // 新订单推送通知
-      if (payload.eventType === 'INSERT' && payload.new) {
-        sendOrderNotification(payload.new);
       }
     })
     .subscribe((status) => {
@@ -52,42 +48,41 @@ function subscribeOrdersRealtime() {
 }
 
 async function enableNotifications() {
-  if (!('Notification' in window)) {
+  if (!('Notification' in window) || !('serviceWorker' in navigator)) {
     toast('当前浏览器不支持通知');
     return;
   }
   const result = await Notification.requestPermission();
-  const btn = document.getElementById('btn-notify');
-  if (result === 'granted') {
-    if (btn) btn.style.display = 'none';
-    toast('通知已开启，有新订单会提醒你');
-  } else {
+  if (result !== 'granted') {
     toast('通知被拒绝，请在浏览器设置中开启');
+    return;
   }
-}
 
-function sendOrderNotification(order) {
-  if (!('Notification' in window)) return;
-  if (Notification.permission !== 'granted') return;
-
-  const icon = order.recipe_id ? '🍽️' : '✏️';
-  const title = `${icon} ${order.recipe_name}`;
-  const body = `${order.member} 点了一道菜${order.note ? '：' + order.note : ''}`;
-
-  // PWA 使用 service worker 推送通知
-  if (navigator.serviceWorker && navigator.serviceWorker.ready) {
-    navigator.serviceWorker.ready.then(reg => {
-      reg.showNotification(title, {
-        body,
-        icon: 'icons/icon-192.png',
-        badge: 'icons/icon-192.png',
-        tag: 'new-order-' + order.id,
-        renotify: true,
-        data: { url: location.href }
-      });
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: 'BITLFhoBx_QEgI_xFvYicSSUip-4exBeagtSUAacTDyJ_5MA4V7sWp0gWlVOg5TCRtwfzbdC3HTU1y35iCiYHZU'
     });
-  } else {
-    new Notification(title, { body, icon: 'icons/icon-192.png' });
+
+    // 保存订阅到数据库
+    const { error } = await supabase.from('push_subscriptions').upsert({
+      member: currentMember,
+      subscription: sub.toJSON()
+    }, { onConflict: 'member,subscription' });
+
+    if (error) {
+      console.error('保存订阅失败:', error);
+      toast('开启失败，请重试');
+      return;
+    }
+
+    const btn = document.getElementById('btn-notify');
+    if (btn) btn.style.display = 'none';
+    toast('通知已开启，息屏也能收到新订单提醒');
+  } catch (e) {
+    console.error('订阅 push 失败:', e);
+    toast('开启失败，请重试');
   }
 }
 
