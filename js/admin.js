@@ -23,6 +23,7 @@ function showAdminTab(tab, btn) {
 function subscribeOrdersRealtime() {
   if (_ordersChannel) return;
   let lastCount = -1;
+  const badge = document.getElementById('realtime-badge');
 
   // 尝试 Supabase Realtime
   try {
@@ -31,26 +32,37 @@ function subscribeOrdersRealtime() {
         const ordersTab = document.getElementById('tab-orders');
         if (ordersTab && ordersTab.classList.contains('active')) {
           loadOrders();
+          if (badge) badge.textContent = '🟢 实时 ' + new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         }
       })
       .subscribe((status) => {
-        // Realtime 连接成功后标记
-        if (status === 'SUBSCRIBED') _ordersRealtimeOk = true;
+        if (status === 'SUBSCRIBED') {
+          _ordersRealtimeOk = true;
+          if (badge) badge.textContent = '🟢 实时已连接';
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          if (badge) badge.textContent = '🟡 轮询模式';
+        }
       });
   } catch (e) {
     console.warn('Realtime 不可用，使用轮询', e);
+    if (badge) badge.textContent = '🟡 轮询模式';
   }
 
-  // 轮询兜底：每 10 秒检查订单数量变化
+  // 轮询兜底：每 5 秒检查订单数量变化
   _ordersPollTimer = setInterval(async () => {
     const ordersTab = document.getElementById('tab-orders');
     if (!ordersTab || !ordersTab.classList.contains('active')) return;
     const today = new Date().toISOString().split('T')[0];
     const { count } = await supabase.from('orders').select('*', { count: 'exact', head: true })
       .gte('created_at', today + 'T00:00:00');
-    if (lastCount !== -1 && count !== lastCount) loadOrders();
+    if (lastCount !== -1 && count !== lastCount) {
+      loadOrders();
+      if (badge && !_ordersRealtimeOk) badge.textContent = '🟡 轮询刷新 ' + new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
     lastCount = count;
-  }, 10000);
+    // 首次轮询记录当前数量
+    if (lastCount === -1) lastCount = count;
+  }, 5000);
 }
 
 async function loadAdminRecipes() {

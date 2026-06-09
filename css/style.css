@@ -1286,3 +1286,12 @@ body {
   background: #E8F5E9;
   color: #388E3C;
 }
+
+/* 实时状态标签 */
+.realtime-badge {
+  font-size: 12px;
+  color: #888;
+  font-weight: normal;
+  margin-left: 8px;
+  white-space: nowrap;
+}
