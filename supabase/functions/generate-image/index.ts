@@ -1,12 +1,22 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
-const SEEDREAM_API_KEY = Deno.env.get('SEEDREAM_API_KEY') || ''
+const SEEDREAM_API_KEY = ***'SEEDREAM_API_KEY') || ''
 const SEEDREAM_ENDPOINT = 'https://ark.cn-beijing.volces.com/api/v3/images/generations'
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
-const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+const SUPABASE_SERVICE_KEY = ***'SUPABASE_SERVICE_ROLE_KEY') || ''
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+}
 
 serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+
   try {
     const { prompt } = await req.json()
 
@@ -32,7 +42,7 @@ serve(async (req) => {
     if (!genData.data || genData.data.length === 0) {
       return new Response(JSON.stringify({ error: '图片生成失败' }), {
         status: 500,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
 
@@ -50,7 +60,7 @@ serve(async (req) => {
     if (uploadError) {
       return new Response(JSON.stringify({ error: '上传失败: ' + uploadError.message }), {
         status: 500,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
 
@@ -58,12 +68,12 @@ serve(async (req) => {
     const { data: urlData } = supabase.storage.from('images').getPublicUrl(fileName)
 
     return new Response(JSON.stringify({ url: urlData.publicUrl }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   }
 })
