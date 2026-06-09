@@ -22,13 +22,7 @@ function subscribeOrdersRealtime() {
   if (_ordersChannel) return;
   const badge = document.getElementById('realtime-badge');
 
-  // 显示通知按钮（未授权时）
-  const btnNotify = document.getElementById('btn-notify');
-  if ('Notification' in window && Notification.permission !== 'granted' && btnNotify) {
-    btnNotify.style.display = 'inline-block';
-  } else if (btnNotify) {
-    btnNotify.style.display = 'none';
-  }
+
 
   _ordersChannel = supabase.channel('orders-realtime')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
@@ -47,44 +41,7 @@ function subscribeOrdersRealtime() {
     });
 }
 
-async function enableNotifications() {
-  if (!('Notification' in window) || !('serviceWorker' in navigator)) {
-    toast('当前浏览器不支持通知');
-    return;
-  }
-  const result = await Notification.requestPermission();
-  if (result !== 'granted') {
-    toast('通知被拒绝，请在浏览器设置中开启');
-    return;
-  }
 
-  try {
-    const reg = await navigator.serviceWorker.ready;
-    const sub = await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: 'BITLFhoBx_QEgI_xFvYicSSUip-4exBeagtSUAacTDyJ_5MA4V7sWp0gWlVOg5TCRtwfzbdC3HTU1y35iCiYHZU'
-    });
-
-    // 保存订阅到数据库
-    const { error } = await supabase.from('push_subscriptions').upsert({
-      member: currentMember,
-      subscription: sub.toJSON()
-    }, { onConflict: 'member,subscription' });
-
-    if (error) {
-      console.error('保存订阅失败:', error);
-      toast('开启失败，请重试');
-      return;
-    }
-
-    const btn = document.getElementById('btn-notify');
-    if (btn) btn.style.display = 'none';
-    toast('通知已开启，息屏也能收到新订单提醒');
-  } catch (e) {
-    console.error('订阅 push 失败:', e);
-    toast('开启失败，请重试');
-  }
-}
 
 async function loadAdminRecipes() {
   const list = document.getElementById('admin-recipe-list');

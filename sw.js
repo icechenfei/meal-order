@@ -1,4 +1,4 @@
-const CACHE_NAME = 'meal-order-v4';
+const CACHE_NAME = 'meal-order-v5';
 const BASE = '/meal-order';
 const STATIC_ASSETS = [
   BASE + '/',
@@ -28,26 +28,6 @@ self.addEventListener('activate', event => {
     )
   );
   self.clients.claim();
-});
-
-// 推送通知（息屏也能收到）
-self.addEventListener('push', event => {
-  let data = { title: '新订单', body: '有人点了一道菜' };
-  try {
-    data = event.data.json();
-  } catch (e) {
-    data.body = event.data?.text() || data.body;
-  }
-  event.waitUntil(
-    self.registration.showNotification(data.title, {
-      body: data.body,
-      icon: 'icons/icon-192.png',
-      badge: 'icons/icon-192.png',
-      tag: data.tag || 'new-order',
-      renotify: true,
-      data: { url: data.url || '/meal-order/admin.html' }
-    })
-  );
 });
 
 // 通知点击：打开或聚焦到对应页面
