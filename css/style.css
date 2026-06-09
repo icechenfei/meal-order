@@ -1330,4 +1330,18 @@ body {
   object-fit: cover;
   display: block;
 }
+.auto-image-refresh {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 12px;
+  color: #FF6B35;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 8px;
+  background: #fff5f0;
+}
+.auto-image-refresh:active {
+  background: #ffe8db;
+}
 

@@ -199,17 +199,32 @@ async function viewRecipe(id) {
   document.getElementById('modal-detail').classList.add('active');
 }
 
-async function autoImage() {
-  const name = document.getElementById('recipe-name').value.trim();
-  if (!name) { toast('请先输入菜名'); return; }
+let _autoImagePage = 1;
+
+function extractDishName(input) {
+  // 去掉常见前缀：人名 + 的/老师/大厨 等
+  let name = input.replace(/^[\u4e00-\u9fa5]{1,4}(老师|大厨|师傅|的|家的)/, '');
+  // 如果没去掉前缀，尝试取最后的菜名部分（2-6个字的常见菜名）
+  const match = name.match(/[\u4e00-\u9fa5]{2,6}$/);
+  return match ? match[0] : name || input;
+}
+
+async function autoImage(newSearch) {
+  const fullName = document.getElementById('recipe-name').value.trim();
+  if (!fullName) { toast('请先输入菜名'); return; }
+
+  if (newSearch) _autoImagePage = 1;
+
+  const dishName = extractDishName(fullName);
+  const searchQuery = `${dishName} 中餐`;  // 偏向中国菜系
 
   const list = document.getElementById('auto-image-list');
   list.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
   document.getElementById('modal-auto-image').classList.add('active');
 
   try {
-    const query = encodeURIComponent(name);
-    const res = await fetch(`https://api.unsplash.com/search/photos?query=${query}&per_page=8&orientation=squarish`, {
+    const query = encodeURIComponent(searchQuery);
+    const res = await fetch(`https://api.unsplash.com/search/photos?query=${query}&per_page=8&orientation=squarish&page=${_autoImagePage}`, {
       headers: { 'Authorization': `Client-ID ${UNSPLASH_ACCESS_KEY}` }
     });
     const data = await res.json();
@@ -220,15 +235,17 @@ async function autoImage() {
     }
 
     if (!data.results || data.results.length === 0) {
-      list.innerHTML = `<div class="empty-state"><p>没有找到「${name}」的图片（共 ${data.total || 0} 条）</p></div>`;
+      list.innerHTML = `<div class="empty-state"><p>没有找到「${dishName}」的图片</p></div>`;
       return;
     }
 
     list.innerHTML = data.results.map(img =>
       `<div class="auto-image-item" onclick="selectAutoImage('${img.urls.regular}')">
-        <img src="${img.urls.small}" alt="${img.alt_description || name}" loading="lazy">
+        <img src="${img.urls.small}" alt="${img.alt_description || dishName}" loading="lazy">
       </div>`
-    ).join('');
+    ).join('') + `
+      <div class="auto-image-refresh" onclick="_autoImagePage++;autoImage(false)">🔄 换一批</div>
+    `;
   } catch (e) {
     console.error('Unsplash 搜索失败:', e);
     list.innerHTML = '<div class="empty-state"><p>搜索失败，请重试</p></div>';
