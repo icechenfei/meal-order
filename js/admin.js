@@ -22,12 +22,21 @@ function subscribeOrdersRealtime() {
   if (_ordersChannel) return;
   const badge = document.getElementById('realtime-badge');
 
+  // 请求通知权限
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+
   _ordersChannel = supabase.channel('orders-realtime')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, (payload) => {
       const ordersTab = document.getElementById('tab-orders');
       if (ordersTab && ordersTab.classList.contains('active')) {
         loadOrders();
         if (badge) badge.textContent = '🟢 实时 ' + new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      }
+      // 新订单推送通知
+      if (payload.eventType === 'INSERT' && payload.new) {
+        sendOrderNotification(payload.new);
       }
     })
     .subscribe((status) => {
@@ -37,6 +46,31 @@ function subscribeOrdersRealtime() {
         if (badge) badge.textContent = '🔴 连接失败';
       }
     });
+}
+
+function sendOrderNotification(order) {
+  if (!('Notification' in window)) return;
+  if (Notification.permission !== 'granted') return;
+
+  const icon = order.recipe_id ? '🍽️' : '✏️';
+  const title = `${icon} ${order.recipe_name}`;
+  const body = `${order.member} 点了一道菜${order.note ? '：' + order.note : ''}`;
+
+  // PWA 使用 service worker 推送通知
+  if (navigator.serviceWorker && navigator.serviceWorker.ready) {
+    navigator.serviceWorker.ready.then(reg => {
+      reg.showNotification(title, {
+        body,
+        icon: 'icons/icon-192.png',
+        badge: 'icons/icon-192.png',
+        tag: 'new-order-' + order.id,
+        renotify: true,
+        data: { url: location.href }
+      });
+    });
+  } else {
+    new Notification(title, { body, icon: 'icons/icon-192.png' });
+  }
 }
 
 async function loadAdminRecipes() {

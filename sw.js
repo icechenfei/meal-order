@@ -1,4 +1,4 @@
-const CACHE_NAME = 'meal-order-v2';
+const CACHE_NAME = 'meal-order-v3';
 const BASE = '/meal-order';
 const STATIC_ASSETS = [
   BASE + '/',
@@ -28,6 +28,22 @@ self.addEventListener('activate', event => {
     )
   );
   self.clients.claim();
+});
+
+// 通知点击：打开或聚焦到对应页面
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const url = event.notification.data?.url || '/meal-order/admin.html';
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
+      for (const client of clients) {
+        if (client.url.includes('/meal-order/') && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      return clients.openWindow(url);
+    })
+  );
 });
 
 // 请求策略：网络优先，失败回退缓存
