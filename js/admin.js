@@ -244,40 +244,30 @@ async function autoImage() {
   console.log('Seedream prompt:', prompt);
 
   try {
-    const res = await fetch(SEEDREAM_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${SEEDREAM_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'doubao-seedream-4-5-251128',
-        prompt: prompt,
-        sequential_image_generation: 'disabled',
-        response_format: 'url',
-        size: '2048x2048',
-        stream: false,
-        watermark: false
-      })
+    const { data, error } = await supabase.functions.invoke('generate-image', {
+      body: { prompt }
     });
 
-    const data = await res.json();
-
-    if (data.error) {
-      list.innerHTML = `<div class="empty-state"><p>生成失败：${data.error.message || '未知错误'}</p></div>`;
+    if (error) {
+      list.innerHTML = `<div class="empty-state"><p>生成失败：${error.message}</p></div>`;
       return;
     }
 
-    if (!data.data || data.data.length === 0) {
+    if (data.error) {
+      list.innerHTML = `<div class="empty-state"><p>生成失败：${data.error}</p></div>`;
+      return;
+    }
+
+    if (!data.url) {
       list.innerHTML = '<div class="empty-state"><p>生成失败，请重试</p></div>';
       return;
     }
 
     list.innerHTML = `
       <div class="auto-image-result">
-        <img src="${data.data[0].url}" alt="${dishName}">
+        <img src="${data.url}" alt="${dishName}">
         <div class="auto-image-actions">
-          <button class="btn-auto-accept" onclick="acceptGeneratedImage('${data.data[0].url}')">✅ 使用这张</button>
+          <button class="btn-auto-accept" onclick="acceptGeneratedImage('${data.url}')">✅ 使用这张</button>
           <button class="btn-auto-retry" onclick="autoImage()">🔄 重新生成</button>
         </div>
       </div>
@@ -288,31 +278,13 @@ async function autoImage() {
   }
 }
 
-async function acceptGeneratedImage(url) {
+function acceptGeneratedImage(url) {
   closeAutoImageModal();
-  toast('正在上传图片...');
-
-  try {
-    const res = await fetch(url);
-    const blob = await res.blob();
-    const file = new File([blob], 'recipe.jpg', { type: 'image/jpeg' });
-
-    const fileName = Date.now() + '_' + Math.random().toString(36).slice(2) + '.jpg';
-    const { error } = await supabase.storage.from('images').upload(fileName, file);
-    if (error) { toast('上传失败：' + error.message); return; }
-
-    const { data: urlData } = supabase.storage.from('images').getPublicUrl(fileName);
-
-    const preview = document.getElementById('image-preview');
-    preview.src = urlData.publicUrl;
-    preview.style.display = 'block';
-
-    window._autoImageUrl = urlData.publicUrl;
-    toast('配图成功');
-  } catch (e) {
-    console.error('上传失败:', e);
-    toast('上传失败，请重试');
-  }
+  const preview = document.getElementById('image-preview');
+  preview.src = url;
+  preview.style.display = 'block';
+  window._autoImageUrl = url;
+  toast('配图成功');
 }
 
 async function selectAutoImage(url) {
