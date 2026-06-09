@@ -255,7 +255,7 @@ async function autoImage() {
         prompt: prompt,
         sequential_image_generation: 'disabled',
         response_format: 'url',
-        size: '2K',
+        size: '2048x2048',
         stream: false,
         watermark: false
       })
