@@ -92,6 +92,7 @@ function renderAdminRecipes() {
 
 function showAddRecipe() {
   editingId = null;
+  window._autoImageUrl = null;
   document.getElementById('modal-title').textContent = '添加菜谱';
   document.getElementById('recipe-form').reset();
   document.getElementById('recipe-id').value = '';
@@ -105,6 +106,7 @@ async function editRecipe(id) {
   if (error || !data) { toast('加载失败'); return; }
 
   editingId = id;
+  window._autoImageUrl = null;
   document.getElementById('modal-title').textContent = '编辑菜谱';
   document.getElementById('recipe-id').value = id;
   document.getElementById('recipe-name').value = data.name || '';
@@ -148,6 +150,9 @@ async function saveRecipe(e) {
     if (uploadError) { toast('图片上传失败:' + uploadError.message); return; }
     const { data: urlData } = supabase.storage.from('images').getPublicUrl(fileName);
     data.image = urlData.publicUrl;
+  } else if (window._autoImageUrl) {
+    data.image = window._autoImageUrl;
+    window._autoImageUrl = null;
   }
 
   const { error } = editingId
@@ -194,6 +199,68 @@ async function viewRecipe(id) {
   document.getElementById('modal-detail').classList.add('active');
 }
 
+async function autoImage() {
+  const name = document.getElementById('recipe-name').value.trim();
+  if (!name) { toast('请先输入菜名'); return; }
+
+  const list = document.getElementById('auto-image-list');
+  list.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  document.getElementById('modal-auto-image').classList.add('active');
+
+  try {
+    const res = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(name + ' 菜 食物')}&per_page=8&orientation=squarish`, {
+      headers: { 'Authorization': `Client-ID ${UNSPLASH_ACCESS_KEY}` }
+    });
+    const data = await res.json();
+
+    if (!data.results || data.results.length === 0) {
+      list.innerHTML = '<div class="empty-state"><p>没有找到相关图片</p></div>';
+      return;
+    }
+
+    list.innerHTML = data.results.map(img =>
+      `<div class="auto-image-item" onclick="selectAutoImage('${img.urls.regular}')">
+        <img src="${img.urls.small}" alt="${img.alt_description || name}" loading="lazy">
+      </div>`
+    ).join('');
+  } catch (e) {
+    console.error('Unsplash 搜索失败:', e);
+    list.innerHTML = '<div class="empty-state"><p>搜索失败，请重试</p></div>';
+  }
+}
+
+async function selectAutoImage(url) {
+  closeAutoImageModal();
+  toast('正在下载图片...');
+
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const file = new File([blob], 'recipe.jpg', { type: 'image/jpeg' });
+
+    const fileName = Date.now() + '_' + Math.random().toString(36).slice(2) + '.jpg';
+    const { error } = await supabase.storage.from('images').upload(fileName, file);
+    if (error) { toast('上传失败：' + error.message); return; }
+
+    const { data: urlData } = supabase.storage.from('images').getPublicUrl(fileName);
+
+    const preview = document.getElementById('image-preview');
+    preview.src = urlData.publicUrl;
+    preview.style.display = 'block';
+
+    // 标记已选择图片（保存时使用）
+    window._autoImageUrl = urlData.publicUrl;
+    toast('配图成功');
+  } catch (e) {
+    console.error('下载失败:', e);
+    toast('下载失败，请重试');
+  }
+}
+
+function closeAutoImageModal() {
+  document.getElementById('modal-auto-image').classList.remove('active');
+}
+
 function previewImage(input) {
   const preview = document.getElementById('image-preview');
   if (input.files[0]) {
@@ -229,6 +296,9 @@ document.getElementById('modal-detail').addEventListener('click', e => {
 });
 document.getElementById('modal-ingredients').addEventListener('click', e => {
   if (e.target === e.currentTarget) closeIngredientsModal();
+});
+document.getElementById('modal-auto-image').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeAutoImageModal();
 });
 
 async function loadCategories() {

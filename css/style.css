@@ -1287,3 +1287,48 @@ body {
   color: #388E3C;
 }
 
+/* 自动配图 */
+.image-upload-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.image-upload-row input[type="file"] {
+  flex: 1;
+}
+.btn-auto-image {
+  padding: 6px 12px;
+  background: #FF6B35;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-auto-image:active {
+  background: #e55a28;
+}
+.auto-image-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+.auto-image-item {
+  cursor: pointer;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid transparent;
+}
+.auto-image-item:active {
+  border-color: #FF6B35;
+}
+.auto-image-item img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  display: block;
+}
+

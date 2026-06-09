@@ -19,6 +19,9 @@
   </script>
   <script src="js/auth.js"></script>
   <script src="js/common.js"></script>
+  <script>
+    const UNSPLASH_ACCESS_KEY = '***';
+  </script>
 </head>
 <body>
   <div class="container">
@@ -91,7 +94,10 @@
           </div>
           <div class="form-group">
             <label>图片</label>
-            <input type="file" id="recipe-image" accept="image/*" onchange="previewImage(this)">
+            <div class="image-upload-row">
+              <input type="file" id="recipe-image" accept="image/*" onchange="previewImage(this)">
+              <button type="button" class="btn-auto-image" onclick="autoImage()">🔍 自动配图</button>
+            </div>
             <img id="image-preview" class="image-preview" style="display:none">
           </div>
           <button type="submit" class="btn-primary" onclick="saveRecipe(event)">保存</button>
@@ -120,7 +126,18 @@
       </div>
     </div>
 
-    <!-- 编辑订单弹窗 -->
+    <!-- 自动配图弹窗 -->
+  <div id="modal-auto-image" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>🔍 选择图片</h2>
+        <button class="close-btn" onclick="closeAutoImageModal()">✕</button>
+      </div>
+      <div id="auto-image-list" class="auto-image-grid"></div>
+    </div>
+  </div>
+
+  <!-- 编辑订单弹窗 -->
     <div id="modal-edit-order" class="modal">
       <div class="modal-content">
         <div class="modal-header">
