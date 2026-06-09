@@ -1,6 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
 const WECHAT_WEBHOOK = 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=5374b6dd-6759-40e2-8ecd-627410c02036'
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
+const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
 
 serve(async (req) => {
   try {
@@ -11,30 +14,47 @@ serve(async (req) => {
       return new Response('OK', { status: 200 })
     }
 
-    const { member, recipe_name, note, recipe_id } = record
-    const icon = recipe_id ? '🍽️' : '✏️'
+    // 已通知过的跳过（同 meal_id 的后续订单）
+    if (record.notified) {
+      return new Response('OK', { status: 200 })
+    }
 
-    // 构建 Markdown 消息
-    let content = `### ${icon} 新订单：${recipe_name}\n`;
-    content += `> **点餐人**：${member}\n`;
-    content += `> **菜品**：${recipe_name}\n`;
-    if (note) content += `> **备注**：${note}\n`;
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+
+    // 查同一次提交的所有菜品
+    const { data: orders } = await supabase
+      .from('orders')
+      .select('member, recipe_name, note, recipe_id')
+      .eq('meal_id', record.meal_id)
+
+    if (!orders || orders.length === 0) {
+      return new Response('OK', { status: 200 })
+    }
+
+    const first = orders[0]
+    const icon = first.recipe_id ? '🍽️' : '✏️'
+    const dishList = orders.map((o: any, i: number) => {
+      let line = `${i + 1}. ${o.recipe_name}`
+      if (o.note) line += `（${o.note}）`
+      return line
+    }).join('\n')
+
+    let content = `${icon} 新订单（${orders.length}道菜）\n`
+    content += `点餐人：${first.member}\n`
+    content += `${dishList}`
 
     const body = JSON.stringify({
-      msgtype: 'markdown',
-      markdown: { content }
+      msgtype: 'text',
+      text: { content }
     })
 
-    const response = await fetch(WECHAT_WEBHOOK, {
+    await fetch(WECHAT_WEBHOOK, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body
     })
 
-    const result = await response.json()
-    console.log('企业微信响应:', result)
-
-    return new Response(JSON.stringify({ success: true, result }), {
+    return new Response(JSON.stringify({ success: true }), {
       headers: { 'Content-Type': 'application/json' },
     })
   } catch (error) {
