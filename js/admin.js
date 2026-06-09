@@ -2,6 +2,8 @@ let editingId = null;
 window._mealIngredients = [];
 let _allRecipes = [];
 let _adminCategory = '全部';
+let _adminSearchQuery = '';
+let _ordersChannel = null;
 
 function showAdminTab(tab, btn) {
   document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
@@ -9,8 +11,23 @@ function showAdminTab(tab, btn) {
   document.getElementById('tab-' + tab).classList.add('active');
   btn.classList.add('active');
   if (tab === 'recipes') loadAdminRecipes();
-  if (tab === 'orders') loadOrders();
+  if (tab === 'orders') {
+    loadOrders();
+    subscribeOrdersRealtime();
+  }
   if (tab === 'history') loadHistoryOrders();
+}
+
+function subscribeOrdersRealtime() {
+  if (_ordersChannel) return;
+  _ordersChannel = supabase.channel('orders-realtime')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
+      const ordersTab = document.getElementById('tab-orders');
+      if (ordersTab && ordersTab.classList.contains('active')) {
+        loadOrders();
+      }
+    })
+    .subscribe();
 }
 
 async function loadAdminRecipes() {
@@ -47,11 +64,19 @@ function selectAdminCategory(cat) {
   renderAdminRecipes();
 }
 
+function onAdminSearchInput() {
+  _adminSearchQuery = document.getElementById('admin-recipe-search').value.trim().toLowerCase();
+  renderAdminRecipes();
+}
+
 function renderAdminRecipes() {
   const list = document.getElementById('admin-recipe-list');
   let data = _allRecipes;
   if (_adminCategory !== '全部') {
     data = data.filter(r => (r.category || '其他') === _adminCategory);
+  }
+  if (_adminSearchQuery) {
+    data = data.filter(r => r.name.toLowerCase().includes(_adminSearchQuery));
   }
 
   if (data.length === 0) {
@@ -419,70 +444,10 @@ async function deleteOrder(id) {
   toast('已删除');
 }
 
-async function editOrder(id) {
-  const { data: order, error } = await supabase.from('orders').select('*').eq('id', id).single();
-  if (error || !order) { toast('加载失败'); return; }
+// editOrder / saveEditOrder / closeEditOrderModal 由 common.js 提供
 
-  const { data: recipes } = await supabase.from('recipes').select('id, name').order('name');
-  const select = document.getElementById('edit-order-recipe');
-  const customInput = document.getElementById('edit-order-custom');
-  const isCustom = !order.recipe_id;
-
-  select.innerHTML = `<option value="__custom">✏️ 自定义输入</option>` + (recipes || []).map(r =>
-    `<option value="${r.id}"${r.id === order.recipe_id ? ' selected' : ''}>${r.name}</option>`
-  ).join('');
-
-  if (isCustom) {
-    select.value = '__custom';
-    customInput.value = order.recipe_name;
-    customInput.style.display = 'block';
-  } else {
-    customInput.style.display = 'none';
-    customInput.value = '';
-  }
-
-  document.getElementById('edit-order-id').value = id;
-  document.getElementById('edit-order-note').value = order.note || '';
-  document.getElementById('modal-edit-order').classList.add('active');
-}
-
-function toggleEditCustom() {
-  const select = document.getElementById('edit-order-recipe');
-  const customInput = document.getElementById('edit-order-custom');
-  customInput.style.display = select.value === '__custom' ? 'block' : 'none';
-}
-
-async function saveEditOrder() {
-  const id = document.getElementById('edit-order-id').value;
-  const select = document.getElementById('edit-order-recipe');
-  const customInput = document.getElementById('edit-order-custom');
-  const note = document.getElementById('edit-order-note').value.trim();
-
-  let recipeId, recipeName;
-  if (select.value === '__custom') {
-    recipeName = customInput.value.trim();
-    if (!recipeName) { toast('请输入菜名'); return; }
-    recipeId = null;
-  } else {
-    recipeId = parseInt(select.value);
-    recipeName = select.options[select.selectedIndex].text;
-  }
-
-  const { error } = await supabase.from('orders').update({
-    recipe_id: recipeId,
-    recipe_name: recipeName,
-    note: note
-  }).eq('id', id);
-
-  if (error) { toast('保存失败:' + error.message); return; }
-
-  closeEditOrderModal();
-  loadOrders();
-  toast('订单已更新');
-}
-
-function closeEditOrderModal() {
-  document.getElementById('modal-edit-order').classList.remove('active');
+function editOrder(id) {
+  openEditOrderModal(id);
 }
 
 // 编辑订单弹窗点击遮罩关闭

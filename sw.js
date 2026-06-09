@@ -1,4 +1,4 @@
-const CACHE_NAME = 'meal-order-v1';
+const CACHE_NAME = 'meal-order-v2';
 const BASE = '/meal-order';
 const STATIC_ASSETS = [
   BASE + '/',
@@ -7,6 +7,7 @@ const STATIC_ASSETS = [
   BASE + '/login.html',
   BASE + '/css/style.css',
   BASE + '/js/auth.js',
+  BASE + '/js/common.js',
   BASE + '/js/app.js',
   BASE + '/js/admin.js'
 ];
