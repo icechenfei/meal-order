@@ -216,7 +216,7 @@ async function autoImage(newSearch) {
   if (newSearch) _autoImagePage = 1;
 
   const dishName = extractDishName(fullName);
-  const searchQuery = `${dishName} 中餐`;  // 偏向中国菜系
+  const searchQuery = `${dishName} Chinese food dish`;  // 偏向中国菜系
 
   const list = document.getElementById('auto-image-list');
   list.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
