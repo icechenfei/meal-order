@@ -128,15 +128,25 @@ function renderRecipes(cat = 'all') {
   }).join('');
 
   if (show.length < total) {
-    list.innerHTML += `<div class="load-more"><button onclick="loadMoreRecipes()">加载更多 (${show.length}/${total})</button></div>`;
+    list.innerHTML += `<div class="load-more-sentinel" id="recipe-load-more"></div>`;
+    _observeRecipeLoadMore();
   }
 }
 
-function loadMoreRecipes() {
-  _recipePage++;
-  const activeCat = document.querySelector('.category-tag.active');
-  const cat = activeCat ? activeCat.dataset.cat : 'all';
-  renderRecipes(cat);
+let _recipeObserver = null;
+function _observeRecipeLoadMore() {
+  if (_recipeObserver) _recipeObserver.disconnect();
+  const el = document.getElementById('recipe-load-more');
+  if (!el) return;
+  _recipeObserver = new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting) {
+      _recipePage++;
+      const activeCat = document.querySelector('.category-tag.active');
+      const cat = activeCat ? activeCat.dataset.cat : 'all';
+      renderRecipes(cat);
+    }
+  }, { threshold: 0.1 });
+  _recipeObserver.observe(el);
 }
 
 function onSearchInput() {

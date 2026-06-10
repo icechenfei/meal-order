@@ -127,13 +127,23 @@ function renderAdminRecipes() {
   }).join('');
 
   if (show.length < total) {
-    list.innerHTML += `<div class="load-more"><button onclick="loadMoreAdminRecipes()">加载更多 (${show.length}/${total})</button></div>`;
+    list.innerHTML += `<div class="load-more-sentinel" id="admin-load-more"></div>`;
+    _observeAdminLoadMore();
   }
 }
 
-function loadMoreAdminRecipes() {
-  _adminPage++;
-  renderAdminRecipes();
+let _adminObserver = null;
+function _observeAdminLoadMore() {
+  if (_adminObserver) _adminObserver.disconnect();
+  const el = document.getElementById('admin-load-more');
+  if (!el) return;
+  _adminObserver = new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting) {
+      _adminPage++;
+      renderAdminRecipes();
+    }
+  }, { threshold: 0.1 });
+  _adminObserver.observe(el);
 }
 
 function showAddRecipe() {
