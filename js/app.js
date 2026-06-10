@@ -5,6 +5,8 @@ let categories = [];
 let cart = [];
 let _orderCounts = {};  // { recipe_id: count }
 let _searchQuery = '';
+let _recipePage = 1;
+const _recipePerPage = 10;
 
 function showPage(pageId) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -33,6 +35,7 @@ async function initCurrentUser() {
 }
 
 async function loadRecipes() {
+  _recipePage = 1;
   const list = document.getElementById('recipe-list');
   list.innerHTML = '<div class="loading"><div class="spinner"></div><p>加载菜单中...</p></div>';
 
@@ -73,6 +76,7 @@ function renderCategories() {
 function filterCategory(cat, el) {
   document.querySelectorAll('.category-tag').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
+  _recipePage = 1;
   renderRecipes(cat);
 }
 
@@ -100,7 +104,10 @@ function renderRecipes(cat = 'all') {
     return;
   }
 
-  list.innerHTML = filtered.map(r => {
+  const total = filtered.length;
+  const show = filtered.slice(0, _recipePage * _recipePerPage);
+
+  list.innerHTML = show.map(r => {
     const img = r.image
       ? `<img src="${r.image}" alt="${r.name}" loading="lazy">`
       : '<div class="placeholder-img">🍲</div>';
@@ -119,10 +126,22 @@ function renderRecipes(cat = 'all') {
       </div>
     `;
   }).join('');
+
+  if (show.length < total) {
+    list.innerHTML += `<div class="load-more"><button onclick="loadMoreRecipes()">加载更多 (${show.length}/${total})</button></div>`;
+  }
+}
+
+function loadMoreRecipes() {
+  _recipePage++;
+  const activeCat = document.querySelector('.category-tag.active');
+  const cat = activeCat ? activeCat.dataset.cat : 'all';
+  renderRecipes(cat);
 }
 
 function onSearchInput() {
   _searchQuery = document.getElementById('recipe-search').value.trim().toLowerCase();
+  _recipePage = 1;
   const activeCat = document.querySelector('.category-tag.active');
   const cat = activeCat ? activeCat.dataset.cat : 'all';
   renderRecipes(cat);

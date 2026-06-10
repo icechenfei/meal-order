@@ -1346,3 +1346,21 @@ body {
 }
 .btn-auto-retry:active { background: #ddd; }
 
+/* 分页加载更多 */
+.load-more {
+  text-align: center;
+  padding: 16px;
+}
+.load-more button {
+  padding: 10px 24px;
+  background: var(--card);
+  border: 1px solid #e0e0e0;
+  border-radius: 20px;
+  font-size: 14px;
+  color: #666;
+  cursor: pointer;
+}
+.load-more button:active {
+  background: #f0f0f0;
+}
+

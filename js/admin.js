@@ -3,6 +3,8 @@ window._mealIngredients = [];
 let _allRecipes = [];
 let _adminCategory = '全部';
 let _adminSearchQuery = '';
+let _adminPage = 1;
+const _adminPerPage = 10;
 
 const COMPRESS_MAX_SIZE = 800;   // 最大宽/高
 const COMPRESS_QUALITY = 0.8;    // JPEG 质量
@@ -45,6 +47,7 @@ function showAdminTab(tab, btn) {
 }
 
 async function loadAdminRecipes() {
+  _adminPage = 1;
   const list = document.getElementById('admin-recipe-list');
   list.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
 
@@ -72,6 +75,7 @@ function renderAdminCategoryBar() {
 
 function selectAdminCategory(cat) {
   _adminCategory = cat;
+  _adminPage = 1;
   document.querySelectorAll('#admin-category-bar .category-tag').forEach(t => {
     t.classList.toggle('active', t.textContent === cat);
   });
@@ -80,6 +84,7 @@ function selectAdminCategory(cat) {
 
 function onAdminSearchInput() {
   _adminSearchQuery = document.getElementById('admin-recipe-search').value.trim().toLowerCase();
+  _adminPage = 1;
   renderAdminRecipes();
 }
 
@@ -94,11 +99,14 @@ function renderAdminRecipes() {
   }
 
   if (data.length === 0) {
-    list.innerHTML = '<div class="empty-state"><div class="emoji">📖</div><p>还没有菜谱，点击“添加”创建</p></div>';
+    list.innerHTML = '<div class="empty-state"><div class="emoji">📖</div><p>还没有菜谱，点击"添加"创建</p></div>';
     return;
   }
 
-  list.innerHTML = data.map(r => {
+  const total = data.length;
+  const show = data.slice(0, _adminPage * _adminPerPage);
+
+  list.innerHTML = show.map(r => {
     const thumb = r.image
       ? `<img class="thumb" src="${r.image}">`
       : '<div class="thumb-placeholder">🍲</div>';
@@ -117,6 +125,15 @@ function renderAdminRecipes() {
       </div>
     `;
   }).join('');
+
+  if (show.length < total) {
+    list.innerHTML += `<div class="load-more"><button onclick="loadMoreAdminRecipes()">加载更多 (${show.length}/${total})</button></div>`;
+  }
+}
+
+function loadMoreAdminRecipes() {
+  _adminPage++;
+  renderAdminRecipes();
 }
 
 function showAddRecipe() {
@@ -253,7 +270,7 @@ async function autoImage() {
   let prompt = `一道中式家常菜「${dishName}」`;
   if (ingredients) {
     const ingList = ingredients.split('\n').map(s => s.trim()).filter(Boolean).slice(0, 5).join('、');
-    prompt += `，主要食材：${ingList}`;
+    prompt += `,主要食材:${ingList}`;
   }
   if (steps) {
     const cookingMethods = [];
@@ -268,10 +285,10 @@ async function autoImage() {
     if (steps.includes('麻辣') || steps.includes('辣椒') || steps.includes('花椒')) cookingMethods.push('麻辣');
     if (steps.includes('蒜') || steps.includes('蒜末') || steps.includes('蒜蓉')) cookingMethods.push('蒜香');
     if (cookingMethods.length > 0) {
-      prompt += `，烹饪方式：${cookingMethods.join('、')}`;
+      prompt += `,烹饪方式:${cookingMethods.join('、')}`;
     }
   }
-  prompt += `。成品盛盘，色泽诱人，表面油亮，点缀葱花，木制餐桌，暖色自然光，食物摄影，4K超高清，浅景深，逼真写实`;
+  prompt += `。成品盛盘,色泽诱人,表面油亮,点缀葱花,木制餐桌,暖色自然光,食物摄影,4K超高清,浅景深,逼真写实`;
 
   console.log('Seedream prompt:', prompt);
 
@@ -281,17 +298,17 @@ async function autoImage() {
     });
 
     if (error) {
-      list.innerHTML = `<div class="empty-state"><p>生成失败：${error.message}</p></div>`;
+      list.innerHTML = `<div class="empty-state"><p>生成失败:${error.message}</p></div>`;
       return;
     }
 
     if (data.error) {
-      list.innerHTML = `<div class="empty-state"><p>生成失败：${data.error}</p></div>`;
+      list.innerHTML = `<div class="empty-state"><p>生成失败:${data.error}</p></div>`;
       return;
     }
 
     if (!data.url) {
-      list.innerHTML = '<div class="empty-state"><p>生成失败，请重试</p></div>';
+      list.innerHTML = '<div class="empty-state"><p>生成失败,请重试</p></div>';
       return;
     }
 
@@ -306,7 +323,7 @@ async function autoImage() {
     `;
   } catch (e) {
     console.error('Seedream 生成失败:', e);
-    list.innerHTML = '<div class="empty-state"><p>生成失败，请重试</p></div>';
+    list.innerHTML = '<div class="empty-state"><p>生成失败,请重试</p></div>';
   }
 }
 
@@ -330,7 +347,7 @@ async function selectAutoImage(url) {
 
     const fileName = Date.now() + '_' + Math.random().toString(36).slice(2) + '.jpg';
     const { error } = await supabase.storage.from('images').upload(fileName, file);
-    if (error) { toast('上传失败：' + error.message); return; }
+    if (error) { toast('上传失败:' + error.message); return; }
 
     const { data: urlData } = supabase.storage.from('images').getPublicUrl(fileName);
 
@@ -338,12 +355,12 @@ async function selectAutoImage(url) {
     preview.src = urlData.publicUrl;
     preview.style.display = 'block';
 
-    // 标记已选择图片（保存时使用）
+    // 标记已选择图片(保存时使用)
     window._autoImageUrl = urlData.publicUrl;
     toast('配图成功');
   } catch (e) {
     console.error('下载失败:', e);
-    toast('下载失败，请重试');
+    toast('下载失败,请重试');
   }
 }
 
@@ -736,7 +753,7 @@ async function loadHistoryOrders() {
 
     html += `
       <div class="history-date-group">
-        <h2 class="history-date-title">📅 ${date}（共 ${dayOrders.length} 份）</h2>
+        <h2 class="history-date-title">📅 ${date}(共 ${dayOrders.length} 份)</h2>
         ${dayHtml}
         <div class="order-summary">
           <h3>📊 当日汇总</h3>
