@@ -1351,3 +1351,29 @@ body {
   height: 1px;
 }
 
+/* 随机推荐 */
+.random-bar {
+  text-align: center;
+  padding: 8px 0;
+}
+.btn-random {
+  padding: 8px 20px;
+  background: linear-gradient(135deg, #FF6B35, #f7931e);
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(255,107,53,0.3);
+}
+.btn-random:active {
+  transform: scale(0.95);
+}
+
+/* 图片加载占位 */
+.recipe-card img {
+  background: #f0f0f0;
+  transition: opacity 0.3s;
+}
+

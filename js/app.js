@@ -8,6 +8,12 @@ let _searchQuery = '';
 let _recipePage = 1;
 const _recipePerPage = 10;
 
+// 图片 CDN 优化：Supabase Storage 图片变换
+function thumbUrl(url) {
+  if (!url || !url.includes('supabase.co/storage')) return url;
+  return url + (url.includes('?') ? '&' : '?') + 'width=400&quality=75&resize=cover';
+}
+
 function showPage(pageId) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById(pageId).classList.add('active');
@@ -109,7 +115,7 @@ function renderRecipes(cat = 'all') {
 
   list.innerHTML = show.map(r => {
     const img = r.image
-      ? `<img src="${r.image}" alt="${r.name}" loading="lazy">`
+      ? `<img src="${thumbUrl(r.image)}" alt="${r.name}" loading="lazy">`
       : '<div class="placeholder-img">🍲</div>';
     const count = _orderCounts[r.id] || 0;
     const countHtml = count > 0 ? `<span class="order-count-badge">${count}次</span>` : '';
@@ -149,6 +155,12 @@ function _observeRecipeLoadMore() {
   _recipeObserver.observe(el);
 }
 
+function randomRecipe() {
+  if (recipes.length === 0) { toast('还没有菜谱'); return; }
+  const r = recipes[Math.floor(Math.random() * recipes.length)];
+  showDetail(r.id);
+}
+
 function onSearchInput() {
   _searchQuery = document.getElementById('recipe-search').value.trim().toLowerCase();
   _recipePage = 1;
@@ -165,7 +177,10 @@ function showDetail(id) {
   const r = currentRecipe;
 
   let html = '';
-  if (r.image) html += `<img src="${r.image}" alt="${r.name}" loading="lazy">`;
+  if (r.image) {
+    const fullUrl = r.image.includes('supabase.co/storage') ? r.image + '?width=800&quality=80' : r.image;
+    html += `<img src="${fullUrl}" alt="${r.name}">`;
+  }
   html += `<span class="detail-category">${r.category || '其他'}</span>`;
   html += `<h2>${r.name}</h2>`;
 
