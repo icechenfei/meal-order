@@ -4,6 +4,35 @@ let _allRecipes = [];
 let _adminCategory = '全部';
 let _adminSearchQuery = '';
 
+const COMPRESS_MAX_SIZE = 800;   // 最大宽/高
+const COMPRESS_QUALITY = 0.8;    // JPEG 质量
+
+async function compressImage(source) {
+  // source: File 或 Blob
+  const blob = source instanceof Blob ? source : await fetch(source).then(r => r.blob());
+  const bitmap = await createImageBitmap(blob);
+
+  let { width, height } = bitmap;
+  if (width > COMPRESS_MAX_SIZE || height > COMPRESS_MAX_SIZE) {
+    const ratio = Math.min(COMPRESS_MAX_SIZE / width, COMPRESS_MAX_SIZE / height);
+    width = Math.round(width * ratio);
+    height = Math.round(height * ratio);
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(bitmap, 0, 0, width, height);
+  bitmap.close();
+
+  return new Promise(resolve => {
+    canvas.toBlob(b => {
+      resolve(new File([b], 'recipe.jpg', { type: 'image/jpeg' }));
+    }, 'image/jpeg', COMPRESS_QUALITY);
+  });
+}
+
 
 function showAdminTab(tab, btn) {
   document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
@@ -142,10 +171,13 @@ async function saveRecipe(e) {
 
   const fileInput = document.getElementById('recipe-image');
   if (fileInput.files[0]) {
-    const file = fileInput.files[0];
+    let file = fileInput.files[0];
     if (file.size > 5 * 1024 * 1024) { toast('图片不能超过 5MB'); return; }
-    const ext = file.name.split('.').pop();
-    const fileName = Date.now() + '_' + Math.random().toString(36).slice(2) + '.' + ext;
+    if (file.size > 200 * 1024) {
+      toast('正在压缩图片...');
+      file = await compressImage(file);
+    }
+    const fileName = Date.now() + '_' + Math.random().toString(36).slice(2) + '.jpg';
     const { error: uploadError } = await supabase.storage.from('images').upload(fileName, file);
     if (uploadError) { toast('图片上传失败:' + uploadError.message); return; }
     const { data: urlData } = supabase.storage.from('images').getPublicUrl(fileName);
@@ -294,7 +326,7 @@ async function selectAutoImage(url) {
   try {
     const res = await fetch(url);
     const blob = await res.blob();
-    const file = new File([blob], 'recipe.jpg', { type: 'image/jpeg' });
+    const file = await compressImage(blob);
 
     const fileName = Date.now() + '_' + Math.random().toString(36).slice(2) + '.jpg';
     const { error } = await supabase.storage.from('images').upload(fileName, file);
