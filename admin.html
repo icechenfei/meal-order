@@ -29,8 +29,8 @@
     </div>
     <div class="admin-nav">
       <button class="nav-btn active" onclick="showAdminTab('recipes', this)">📖 菜谱管理</button>
-      <button class="nav-btn" onclick="showAdminTab('orders', this)">📋 今日点餐</button>
-      <button class="nav-btn" onclick="showAdminTab('history', this)">📅 历史点餐</button>
+      <button class="nav-btn" onclick="showAdminTab('orders', this)">📋 未完点餐</button>
+      <button class="nav-btn" onclick="showAdminTab('history', this)">✅ 已完成</button>
     </div>
 
     <!-- 菜谱管理 -->
@@ -46,20 +46,20 @@
       <div id="admin-recipe-list"></div>
     </div>
 
-    <!-- 今日点餐 -->
+    <!-- 未完点餐 -->
     <div id="tab-orders" class="admin-tab">
       <div class="admin-header">
-        <h1>📋 今日点餐</h1>
+        <h1>📋 未完点餐</h1>
 
       </div>
       <div id="order-list"></div>
       <div id="order-summary" class="order-summary"></div>
     </div>
 
-    <!-- 历史点餐 -->
+    <!-- 已完成 -->
     <div id="tab-history" class="admin-tab">
       <div class="admin-header">
-        <h1>📅 历史点餐</h1>
+        <h1>✅ 已完成</h1>
       </div>
       <div id="history-list"></div>
     </div>

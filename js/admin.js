@@ -431,19 +431,16 @@ async function loadOrders() {
   const summaryEl = document.getElementById('order-summary');
   list.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
 
-  const today = new Date();
-  const ymd = today.toISOString().split('T')[0];
-
   const { data: orders, error } = await supabase
     .from('orders')
     .select('*')
-    .gte('created_at', ymd + 'T00:00:00')
+    .neq('status', 'done')
     .order('created_at', { ascending: false });
 
   if (error) { console.error(error); list.innerHTML = ''; return; }
 
   if (!orders || orders.length === 0) {
-    list.innerHTML = '<div class="empty-state"><div class="emoji">📋</div><p>今天还没有人点餐</p></div>';
+    list.innerHTML = '<div class="empty-state"><div class="emoji">📋</div><p>没有未完成的点餐</p></div>';
     summaryEl.innerHTML = '';
     return;
   }
@@ -568,7 +565,7 @@ async function loadOrders() {
         <div class="meal-group-header">
           <span class="meal-group-time">📋 其他订单</span>
           <div class="meal-group-header-right">
-            ${noMealIngs.length > 0 ? `<button class="btn-ingredients" onclick="showIngredients('今日食材', ${idx})">🥬 食材</button>` : ''}
+            ${noMealIngs.length > 0 ? `<button class="btn-ingredients" onclick="showIngredients('该餐食材', ${idx})">🥬 食材</button>` : ''}
           </div>
         </div>
         <div class="meal-group-items">
@@ -588,7 +585,7 @@ async function loadOrders() {
   const total = orders.length;
 
   summaryEl.innerHTML = `
-    <h3>📊 今日汇总(共 ${total} 份)</h3>
+    <h3>📊 未完成汇总(共 ${total} 份)</h3>
     ${Object.entries(summary).map(([name, count]) =>
       `<div class="summary-item"><span>${name}</span><span class="count">${count} 份</span></div>`
     ).join('')}
@@ -633,19 +630,16 @@ async function loadHistoryOrders() {
   const list = document.getElementById('history-list');
   list.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
 
-  const today = new Date();
-  const ymd = today.toISOString().split('T')[0];
-
   const { data: orders, error } = await supabase
     .from('orders')
     .select('*')
-    .lt('created_at', ymd + 'T00:00:00')
+    .eq('status', 'done')
     .order('created_at', { ascending: false });
 
   if (error) { console.error(error); list.innerHTML = ''; return; }
 
   if (!orders || orders.length === 0) {
-    list.innerHTML = '<div class="empty-state"><div class="emoji">📅</div><p>还没有历史点餐记录</p></div>';
+    list.innerHTML = '<div class="empty-state"><div class="emoji">✅</div><p>还没有已完成的点餐</p></div>';
     return;
   }
 
@@ -763,7 +757,7 @@ async function loadHistoryOrders() {
 
     html += `
       <div class="history-date-group">
-        <h2 class="history-date-title">📅 ${date}(共 ${dayOrders.length} 份)</h2>
+        <h2 class="history-date-title">✅ ${date}(共 ${dayOrders.length} 份)</h2>
         ${dayHtml}
         <div class="order-summary">
           <h3>📊 当日汇总</h3>
