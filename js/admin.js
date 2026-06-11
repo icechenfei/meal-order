@@ -273,7 +273,7 @@ async function autoImage() {
   const steps = document.getElementById('recipe-steps').value.trim();
 
   const list = document.getElementById('auto-image-list');
-  list.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  list.innerHTML = '<div class="loading"><div class="spinner"></div><p class="loading-text">🤖 AI thinking...</p></div>';
   document.getElementById('modal-auto-image').classList.add('active');
 
   // 根据菜名、配菜、做法生成提示词

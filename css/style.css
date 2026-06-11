@@ -963,7 +963,12 @@ body {
   border-top-color: var(--primary);
   border-radius: 50%;
   animation: spin .6s linear infinite;
-  margin: 0 auto 12px;
+  margin: 0 auto 8px;
+}
+.loading-text {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
 }
 @keyframes spin {
   to { transform: rotate(360deg); }
