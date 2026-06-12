@@ -25,7 +25,10 @@
   <div class="container">
     <div class="user-bar" id="user-bar">
       <span class="user-email" id="user-email"></span>
-      <button class="logout-btn" onclick="logout()">退出</button>
+      <div style="display:flex;gap:8px;align-items:center">
+        <a href="index.html" class="btn-admin">← 点餐</a>
+        <button class="logout-btn" onclick="logout()">退出</button>
+      </div>
     </div>
     <div class="admin-nav">
       <button class="nav-btn active" onclick="showAdminTab('recipes', this)">📖 菜谱管理</button>
