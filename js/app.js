@@ -333,8 +333,10 @@ function updateCartFloat() {
   const count = document.getElementById('cart-count');
   count.textContent = cart.length;
   const activePage = document.querySelector('.page.active');
-  const hide = activePage && activePage.id === 'page-cart';
+  const hide = activePage && (activePage.id === 'page-cart' || activePage.id === 'page-success');
   float.style.display = cart.length > 0 && !hide ? 'flex' : 'none';
+  // 非菜单页时底部导航隐藏，浮动按钮下移
+  float.style.bottom = (activePage && activePage.id === 'page-menu') ? '80px' : '24px';
 }
 
 function showCart() {
