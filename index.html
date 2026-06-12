@@ -39,21 +39,18 @@
             <a href="admin.html" class="btn-admin">🔧 厨房管理</a>
           </div>
         </div>
-        <div class="menu-tabs">
-          <button class="menu-tab active" data-tab="menu" onclick="switchMenuTab('menu', this)">📋 菜单</button>
-          <button class="menu-tab" data-tab="history" onclick="switchMenuTab('history', this)">📅 历史菜单</button>
-        </div>
+
       </div>
       <div id="menu-content" class="menu-section active">
-        <div class="custom-dish-bar">
-          <input type="text" id="custom-dish-input" placeholder="✏️ 输入想吃的菜名..." maxlength="50">
-          <button class="custom-dish-btn" onclick="addCustomDish()">+ 加入</button>
+        <div class="unified-search-bar">
+          <input type="text" id="unified-search" placeholder="🔍 搜索菜品或输入自定义菜名..." oninput="onUnifiedInput()" onkeydown="onUnifiedKeydown(event)">
+          <button class="btn-dice" onclick="randomRecipe()" title="今天吃什么">🎲</button>
+          <button class="btn-add-custom" id="btn-add-custom" onclick="addCustomDish()" style="display:none">+ 加入</button>
         </div>
-        <div class="search-bar">
-          <input type="text" id="recipe-search" placeholder="🔍 搜索菜品..." oninput="onSearchInput()">
+        <div class="search-hint" id="search-hint" style="display:none">
+          <span id="search-hint-text"></span>
         </div>
         <div class="category-bar" id="category-bar"></div>
-        <div class="random-bar"><button class="btn-random" onclick="randomRecipe()">🎲 今天吃什么</button></div>
         <div id="recipe-list"></div>
       </div>
       <div id="history-content" class="menu-section"></div>
@@ -104,6 +101,18 @@
       <span class="cart-float-icon">🛒</span>
       <span class="cart-float-count" id="cart-count">0</span>
     </div>
+
+    <!-- 底部导航 -->
+    <nav class="bottom-nav" id="bottom-nav">
+      <button class="bottom-nav-btn active" data-tab="menu" onclick="switchBottomTab('menu', this)">
+        <span class="nav-icon">📋</span>
+        <span class="nav-label">菜单</span>
+      </button>
+      <button class="bottom-nav-btn" data-tab="history" onclick="switchBottomTab('history', this)">
+        <span class="nav-icon">📅</span>
+        <span class="nav-label">历史</span>
+      </button>
+    </nav>
 
     <!-- 编辑订单弹窗 -->
     <div id="modal-edit-order" class="modal">

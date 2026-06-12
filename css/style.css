@@ -1128,7 +1128,7 @@ body {
 .cart-float {
   display: none;
   position: fixed;
-  bottom: 24px;
+  bottom: 80px;
   right: 24px;
   background: var(--primary);
   color: white;
@@ -1356,7 +1356,7 @@ body {
   height: 1px;
 }
 
-/* 随机推荐 */
+/* 随机推荐 (admin 页面保留) */
 .random-bar {
   text-align: center;
   padding: 8px 0;
@@ -1374,6 +1374,117 @@ body {
 }
 .btn-random:active {
   transform: scale(0.95);
+}
+
+/* ===== Unified Search Bar ===== */
+.unified-search-bar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+  animation: slideUp .3s ease;
+}
+.unified-search-bar input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 2px solid var(--primary);
+  border-radius: 12px;
+  font-size: 15px;
+  background: var(--card);
+  transition: border-color .2s;
+  min-width: 0;
+}
+.unified-search-bar input:focus {
+  border-color: var(--primary-dark);
+  outline: none;
+}
+.btn-dice {
+  width: 42px;
+  height: 42px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  border-radius: 12px;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all .2s;
+}
+.btn-dice:active {
+  background: var(--primary-light);
+  border-color: var(--primary);
+  transform: scale(0.9);
+}
+.btn-add-custom {
+  padding: 10px 14px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background .2s;
+  animation: scaleIn .2s ease;
+}
+.btn-add-custom:active {
+  background: var(--primary-dark);
+}
+.search-hint {
+  text-align: center;
+  padding: 4px 0 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  animation: fadeIn .2s ease;
+}
+
+/* ===== Bottom Navigation ===== */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--card);
+  display: flex;
+  border-top: 1px solid var(--border);
+  padding: 6px 0 env(safe-area-inset-bottom, 8px);
+  z-index: 60;
+  box-shadow: 0 -2px 12px rgba(0,0,0,0.06);
+}
+.bottom-nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition: all .2s;
+  color: var(--text-secondary);
+}
+.bottom-nav-btn .nav-icon {
+  font-size: 22px;
+  line-height: 1;
+}
+.bottom-nav-btn .nav-label {
+  font-size: 11px;
+  font-weight: 500;
+}
+.bottom-nav-btn.active {
+  color: var(--primary);
+}
+.bottom-nav-btn:active:not(.active) {
+  opacity: 0.6;
+}
+
+/* 点餐页面给底部导航留空间 */
+#page-menu {
+  padding-bottom: 70px;
 }
 
 /* 图片加载占位 */

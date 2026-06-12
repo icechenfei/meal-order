@@ -7,6 +7,7 @@ let _orderCounts = {};  // { recipe_id: count }
 let _searchQuery = '';
 let _recipePage = 1;
 const _recipePerPage = 10;
+let _activeCategory = 'all';
 
 // 图片 CDN 优化：Supabase Storage 图片变换
 function thumbUrl(url) {
@@ -18,11 +19,14 @@ function showPage(pageId) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById(pageId).classList.add('active');
   updateCartFloat();
+  // 底部导航只在菜单页显示
+  const bottomNav = document.getElementById('bottom-nav');
+  if (bottomNav) bottomNav.style.display = pageId === 'page-menu' ? 'flex' : 'none';
   if (pageId === 'page-menu') {
     currentRecipe = null;
     document.getElementById('order-note').value = '';
     loadRecipes();
-    const activeTab = document.querySelector('.menu-tab.active');
+    const activeTab = document.querySelector('.bottom-nav-btn.active');
     if (activeTab && activeTab.dataset.tab === 'history') {
       loadHistory();
     }
@@ -71,22 +75,23 @@ async function loadRecipes() {
 
 function renderCategories() {
   const bar = document.getElementById('category-bar');
-  const all = `<span class="category-tag active" data-cat="all" onclick="filterCategory('all', this)">全部</span>`;
   const hot = `<span class="category-tag" data-cat="__hot" onclick="filterCategory('__hot', this)">🔥 常点</span>`;
   const items = categories.map(c =>
     `<span class="category-tag" data-cat="${c}" onclick="filterCategory('${c}', this)">${c}</span>`
   ).join('');
-  bar.innerHTML = all + hot + items;
+  bar.innerHTML = hot + items;
 }
 
 function filterCategory(cat, el) {
   document.querySelectorAll('.category-tag').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
+  _activeCategory = cat;
   _recipePage = 1;
   renderRecipes(cat);
 }
 
-function renderRecipes(cat = 'all') {
+function renderRecipes(cat) {
+  if (cat === undefined) cat = _activeCategory;
   const list = document.getElementById('recipe-list');
   let filtered = recipes;
 
@@ -102,6 +107,9 @@ function renderRecipes(cat = 'all') {
   } else if (cat !== 'all') {
     filtered = filtered.filter(r => r.category === cat);
   }
+
+  // 更新自定义按钮可见性
+  _updateCustomBtn();
 
   if (filtered.length === 0) {
     const msg = _searchQuery ? '没有找到匹配的菜品' : '还没有菜品，等厨师添加中...';
@@ -161,12 +169,49 @@ function randomRecipe() {
   showDetail(r.id);
 }
 
-function onSearchInput() {
-  _searchQuery = document.getElementById('recipe-search').value.trim().toLowerCase();
+// 统一搜索/自定义输入
+function onUnifiedInput() {
+  const val = document.getElementById('unified-search').value.trim();
+  _searchQuery = val.toLowerCase();
   _recipePage = 1;
-  const activeCat = document.querySelector('.category-tag.active');
-  const cat = activeCat ? activeCat.dataset.cat : 'all';
-  renderRecipes(cat);
+  renderRecipes();
+}
+
+function onUnifiedKeydown(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    const val = document.getElementById('unified-search').value.trim();
+    if (!val) return;
+    // 如果没有匹配的菜谱，直接作为自定义菜品加入
+    const matched = recipes.filter(r => r.name.toLowerCase().includes(val.toLowerCase()));
+    if (matched.length === 0) {
+      addCustomDish();
+    }
+  }
+}
+
+function _updateCustomBtn() {
+  const val = document.getElementById('unified-search')?.value.trim() || '';
+  const btn = document.getElementById('btn-add-custom');
+  const hint = document.getElementById('search-hint');
+  const hintText = document.getElementById('search-hint-text');
+  if (!btn) return;
+
+  if (!val) {
+    btn.style.display = 'none';
+    hint.style.display = 'none';
+    return;
+  }
+
+  const matched = recipes.filter(r => r.name.toLowerCase().includes(val.toLowerCase()));
+  if (matched.length === 0) {
+    btn.style.display = 'block';
+    hint.style.display = 'block';
+    hintText.textContent = `没有找到「${val}」，可以作为自定义菜品加入`;
+  } else {
+    btn.style.display = 'none';
+    hint.style.display = 'none';
+  }
 }
 
 function showDetail(id) {
@@ -261,7 +306,7 @@ async function addToCart() {
 }
 
 async function addCustomDish() {
-  const input = document.getElementById('custom-dish-input');
+  const input = document.getElementById('unified-search');
   const name = input.value.trim();
   if (!name) {
     toast('请输入菜名');
@@ -276,7 +321,10 @@ async function addCustomDish() {
   if (error) { toast('加入失败：' + error.message); return; }
   cart.push({ id: data.id, recipe_id: data.recipe_id, recipe_name: data.recipe_name, note: data.note || '' });
   input.value = '';
+  _searchQuery = '';
+  _updateCustomBtn();
   updateCartFloat();
+  renderRecipes();
   toast(`「${name}」已加入已点菜谱`);
 }
 
@@ -368,9 +416,19 @@ async function submitCart() {
 }
 
 function switchMenuTab(tab, el) {
+  // 兼容旧调用（admin 页面可能用到）
   document.querySelectorAll('.menu-tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.menu-section').forEach(s => s.classList.remove('active'));
+  if (el) el.classList.add('active');
+  document.getElementById(tab === 'menu' ? 'menu-content' : 'history-content').classList.add('active');
+  if (tab === 'history') loadHistory();
+}
+
+// 底部导航切换
+function switchBottomTab(tab, el) {
+  document.querySelectorAll('.bottom-nav-btn').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
+  document.querySelectorAll('.menu-section').forEach(s => s.classList.remove('active'));
   document.getElementById(tab === 'menu' ? 'menu-content' : 'history-content').classList.add('active');
   if (tab === 'history') loadHistory();
 }
@@ -501,7 +559,9 @@ async function reorderMeal(mealId) {
   });
 
   updateCartFloat();
-  document.querySelector('.menu-tab[data-tab="menu"]').click();
+  // 切换到底部导航的菜单 tab
+  const menuBtn = document.querySelector('.bottom-nav-btn[data-tab="menu"]');
+  if (menuBtn) switchBottomTab('menu', menuBtn);
   toast(`已添加 ${orders.length} 个菜品到已点菜谱`);
 }
 
@@ -525,7 +585,4 @@ document.getElementById('modal-edit-order').addEventListener('click', e => {
 
 initCurrentUser().then(() => { loadCart(); loadRecipes(); });
 
-// 自定义菜品输入框回车提交
-document.getElementById('custom-dish-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') { e.preventDefault(); addCustomDish(); }
-});
+
