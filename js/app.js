@@ -10,6 +10,7 @@ const _recipePerPage = 10;
 let _activeCategory = 'all';
 let _currentDetailIndex = -1;
 let _detailSwipeInitialized = false;
+let _recipesLoaded = false;
 
 // 图片 CDN 优化：Supabase Storage 图片变换
 function thumbUrl(url) {
@@ -27,7 +28,11 @@ function showPage(pageId) {
   if (pageId === 'page-menu') {
     currentRecipe = null;
     document.getElementById('order-note').value = '';
-    loadRecipes();
+    if (_recipesLoaded) {
+      renderRecipes();
+    } else {
+      loadRecipes();
+    }
     const activeTab = document.querySelector('.bottom-nav-btn.active');
     if (activeTab && activeTab.dataset.tab === 'history') {
       loadHistory();
@@ -73,6 +78,7 @@ async function loadRecipes() {
 
   renderCategories();
   renderRecipes();
+  _recipesLoaded = true;
 }
 
 function renderCategories() {
@@ -340,6 +346,7 @@ async function addToCart() {
   updateCartFloat();
   document.getElementById('order-note').value = '';
   toast('已加入已点菜谱');
+  _recipesLoaded = false;
   showPage('page-menu');
 }
 
@@ -357,6 +364,7 @@ async function addToCartByRecipe(id) {
   cart.push({ id: data.id, recipe_id: data.recipe_id, recipe_name: data.recipe_name, note: data.note || '' });
   updateCartFloat();
   toast(`已加入「${recipe.name}」`);
+  _recipesLoaded = false;
 }
 
 async function addCustomDish() {
@@ -380,6 +388,7 @@ async function addCustomDish() {
   updateCartFloat();
   renderRecipes();
   toast(`「${name}」已加入已点菜谱`);
+  _recipesLoaded = false;
 }
 
 function updateCartFloat() {
@@ -506,6 +515,7 @@ async function submitCart() {
   btn.disabled = false;
   btn.textContent = '合并提交';
   showPage('page-success');
+  _recipesLoaded = false;
 }
 
 function switchMenuTab(tab, el) {
