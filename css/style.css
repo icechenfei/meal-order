@@ -1466,45 +1466,5 @@ body {
   animation: fadeIn .3s ease;
 }
 
-/* 购物车左滑删除 */
-.cart-item-wrapper {
-  position: relative;
-  margin-bottom: 10px;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: var(--shadow);
-}
-.cart-item-wrapper .cart-item {
-  position: relative;
-  z-index: 2;
-  background: var(--card);
-  padding: 14px 16px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  border-radius: 12px;
-  touch-action: pan-y;
-  margin-bottom: 0;
-  box-shadow: none;
-  transition: transform .2s ease;
-}
-.cart-item-wrapper .cart-item.swiping {
-  transition: none;
-}
-.cart-item-delete-bg {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 80px;
-  background: #E74C3C;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  font-weight: 600;
-  border-radius: 0 12px 12px 0;
-  z-index: 1;
-}
+
 

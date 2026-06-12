@@ -420,53 +420,16 @@ function renderCart() {
     const icon = item.recipe_id ? '🍽️' : '✏️';
     const tag = item.recipe_id ? '' : ' <span class="custom-tag">自定义</span>';
     return `
-    <div class="cart-item-wrapper">
-      <div class="cart-item-delete-bg">删除</div>
-      <div class="cart-item" data-index="${i}">
-        <div class="cart-item-info">
-          <h3>${icon} ${item.recipe_name}${tag}</h3>
-          ${item.note ? `<p class="cart-item-note">💬 ${item.note}</p>` : ''}
-        </div>
+    <div class="cart-item" data-index="${i}">
+      <div class="cart-item-info">
+        <h3>${icon} ${item.recipe_name}${tag}</h3>
+        ${item.note ? `<p class="cart-item-note">💬 ${item.note}</p>` : ''}
       </div>
+      <button class="cart-item-delete" onclick="removeFromCart(${i})">✕</button>
     </div>
   `;
   }).join('');
   document.getElementById('cart-total').textContent = `共 ${cart.length} 个菜品`;
-  initCartSwipe();
-}
-
-function initCartSwipe() {
-  document.querySelectorAll('.cart-item-wrapper').forEach(wrapper => {
-    const item = wrapper.querySelector('.cart-item');
-    let startX = 0;
-
-    const onTouchStart = e => {
-      startX = e.touches[0].clientX;
-      item.classList.add('swiping');
-    };
-
-    const onTouchMove = e => {
-      const dx = e.touches[0].clientX - startX;
-      if (dx < 0) {
-        const translateX = Math.max(-80, dx);
-        item.style.transform = `translateX(${translateX}px)`;
-      }
-    };
-
-    const onTouchEnd = e => {
-      item.classList.remove('swiping');
-      const dx = e.changedTouches[0].clientX - startX;
-      if (dx < -60) {
-        removeFromCart(parseInt(item.dataset.index));
-      } else {
-        item.style.transform = '';
-      }
-    };
-
-    wrapper.addEventListener('touchstart', onTouchStart, { passive: true });
-    wrapper.addEventListener('touchmove', onTouchMove, { passive: true });
-    wrapper.addEventListener('touchend', onTouchEnd, { passive: true });
-  });
 }
 
 async function removeFromCart(index) {
