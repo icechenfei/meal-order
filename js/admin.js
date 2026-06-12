@@ -396,8 +396,8 @@ function previewImage(input) {
 
 function closeModal() { document.getElementById('modal-recipe').classList.remove('active'); }
 
-function initModalRecipeSwipe() {
-  const modal = document.getElementById('modal-recipe');
+function initModalSwipe(modalId, closeFn) {
+  const modal = document.getElementById(modalId);
   let startX = 0;
   let startY = 0;
   let swiping = false;
@@ -421,7 +421,7 @@ function initModalRecipeSwipe() {
     if (!swiping) return;
     const dx = e.changedTouches[0].clientX - startX;
     if (Math.abs(dx) > 80) {
-      closeModal();
+      closeFn();
     }
   };
 
@@ -816,5 +816,6 @@ function toast(msg) {
   setTimeout(() => el.remove(), 2500);
 }
 
-initModalRecipeSwipe();
+initModalSwipe('modal-recipe', closeModal);
+initModalSwipe('modal-detail', closeDetailModal);
 loadAdminRecipes();

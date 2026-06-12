@@ -8,6 +8,8 @@ let _searchQuery = '';
 let _recipePage = 1;
 const _recipePerPage = 10;
 let _activeCategory = 'all';
+let _currentDetailIndex = -1;
+let _detailSwipeInitialized = false;
 
 // 图片 CDN 优化：Supabase Storage 图片变换
 function thumbUrl(url) {
@@ -128,7 +130,7 @@ function renderRecipes(cat) {
     const count = _orderCounts[r.id] || 0;
     const countHtml = count > 0 ? `<span class="order-count-badge">${count}次</span>` : '';
     return `
-      <div class="recipe-card" onclick="showDetail(${r.id})">
+      <div class="recipe-card" data-id="${r.id}">
         ${img}
         <div class="recipe-card-info">
           <h3>${r.name}</h3>
@@ -161,6 +163,20 @@ function _observeRecipeLoadMore() {
     }
   }, { threshold: 0.1 });
   _recipeObserver.observe(el);
+}
+
+function _getFilteredRecipes() {
+  let filtered = recipes;
+  if (_searchQuery) {
+    filtered = filtered.filter(r => r.name.toLowerCase().includes(_searchQuery));
+  }
+  if (_activeCategory === '__hot') {
+    filtered = filtered.filter(r => (_orderCounts[r.id] || 0) > 0);
+    filtered.sort((a, b) => (_orderCounts[b.id] || 0) - (_orderCounts[a.id] || 0));
+  } else if (_activeCategory !== 'all') {
+    filtered = filtered.filter(r => r.category === _activeCategory);
+  }
+  return filtered;
 }
 
 function randomRecipe() {
@@ -215,7 +231,9 @@ function _updateCustomBtn() {
 }
 
 function showDetail(id) {
-  currentRecipe = recipes.find(r => r.id === id);
+  const filtered = _getFilteredRecipes();
+  _currentDetailIndex = filtered.findIndex(r => r.id === id);
+  currentRecipe = filtered[_currentDetailIndex];
   if (!currentRecipe) return;
 
   const d = document.getElementById('recipe-detail');
@@ -241,11 +259,20 @@ function showDetail(id) {
   d.innerHTML = html;
   document.getElementById('order-recipe-name').textContent = '🍽️ ' + r.name;
   document.getElementById('order-note').value = '';
+
+  const hint = document.getElementById('detail-swipe-hint');
+  if (hint) {
+    hint.textContent = filtered.length > 1 ? '👆👇 上下滑动切换菜品' : '';
+  }
+
   showPage('page-detail');
   initDetailSwipe();
 }
 
 function initDetailSwipe() {
+  if (_detailSwipeInitialized) return;
+  _detailSwipeInitialized = true;
+
   const page = document.getElementById('page-detail');
   let startX = 0;
   let startY = 0;
@@ -258,20 +285,21 @@ function initDetailSwipe() {
   };
 
   const onTouchMove = e => {
-    const dx = e.touches[0].clientX - startX;
-    const dy = e.touches[0].clientY - startY;
-    // 水平滑动距离大于垂直时才算滑动
-    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 20) {
+    const dx = Math.abs(e.touches[0].clientX - startX);
+    const dy = Math.abs(e.touches[0].clientY - startY);
+    if (dy > dx && dy > 20) {
       swiping = true;
     }
   };
 
   const onTouchEnd = e => {
     if (!swiping) return;
-    const dx = e.changedTouches[0].clientX - startX;
-    // 左滑或右滑超过 80px 都返回菜单
-    if (Math.abs(dx) > 80) {
-      showPage('page-menu');
+    const dy = e.changedTouches[0].clientY - startY;
+    const filtered = _getFilteredRecipes();
+    if (dy > 80 && _currentDetailIndex > 0) {
+      showDetail(filtered[_currentDetailIndex - 1].id);
+    } else if (dy < -80 && _currentDetailIndex < filtered.length - 1) {
+      showDetail(filtered[_currentDetailIndex + 1].id);
     }
   };
 
@@ -303,6 +331,22 @@ async function addToCart() {
   document.getElementById('order-note').value = '';
   toast('已加入已点菜谱');
   showPage('page-menu');
+}
+
+async function addToCartByRecipe(id) {
+  const recipe = recipes.find(r => r.id === id);
+  if (!recipe) return;
+  if (navigator.vibrate) navigator.vibrate(50);
+  const { data, error } = await supabase.from('cart_items').insert({
+    member: currentMember,
+    recipe_id: id,
+    recipe_name: recipe.name,
+    note: ''
+  }).select().single();
+  if (error) { toast('加入失败：' + error.message); return; }
+  cart.push({ id: data.id, recipe_id: data.recipe_id, recipe_name: data.recipe_name, note: data.note || '' });
+  updateCartFloat();
+  toast(`已加入「${recipe.name}」`);
 }
 
 async function addCustomDish() {
@@ -357,16 +401,53 @@ function renderCart() {
     const icon = item.recipe_id ? '🍽️' : '✏️';
     const tag = item.recipe_id ? '' : ' <span class="custom-tag">自定义</span>';
     return `
-    <div class="cart-item">
-      <div class="cart-item-info">
-        <h3>${icon} ${item.recipe_name}${tag}</h3>
-        ${item.note ? `<p class="cart-item-note">💬 ${item.note}</p>` : ''}
+    <div class="cart-item-wrapper">
+      <div class="cart-item-delete-bg">删除</div>
+      <div class="cart-item" data-index="${i}">
+        <div class="cart-item-info">
+          <h3>${icon} ${item.recipe_name}${tag}</h3>
+          ${item.note ? `<p class="cart-item-note">💬 ${item.note}</p>` : ''}
+        </div>
       </div>
-      <button class="cart-item-delete" onclick="removeFromCart(${i})">✕</button>
     </div>
   `;
   }).join('');
   document.getElementById('cart-total').textContent = `共 ${cart.length} 个菜品`;
+  initCartSwipe();
+}
+
+function initCartSwipe() {
+  document.querySelectorAll('.cart-item-wrapper').forEach(wrapper => {
+    const item = wrapper.querySelector('.cart-item');
+    let startX = 0;
+
+    const onTouchStart = e => {
+      startX = e.touches[0].clientX;
+      item.classList.add('swiping');
+    };
+
+    const onTouchMove = e => {
+      const dx = e.touches[0].clientX - startX;
+      if (dx < 0) {
+        const translateX = Math.max(-80, dx);
+        item.style.transform = `translateX(${translateX}px)`;
+      }
+    };
+
+    const onTouchEnd = e => {
+      item.classList.remove('swiping');
+      const dx = e.changedTouches[0].clientX - startX;
+      if (dx < -60) {
+        removeFromCart(parseInt(item.dataset.index));
+      } else {
+        item.style.transform = '';
+      }
+    };
+
+    wrapper.addEventListener('touchstart', onTouchStart, { passive: true });
+    wrapper.addEventListener('touchmove', onTouchMove, { passive: true });
+    wrapper.addEventListener('touchend', onTouchEnd, { passive: true });
+  });
 }
 
 async function removeFromCart(index) {
@@ -584,6 +665,53 @@ function toast(msg) {
 document.getElementById('modal-edit-order').addEventListener('click', e => {
   if (e.target === e.currentTarget) closeEditOrderModal();
 });
+
+// 菜谱卡片点击进入详情
+document.getElementById('recipe-list').addEventListener('click', e => {
+  const card = e.target.closest('.recipe-card');
+  if (!card) return;
+  if (card._longPressed) {
+    card._longPressed = false;
+    return;
+  }
+  showDetail(parseInt(card.dataset.id));
+});
+
+// 菜谱卡片长按快速加入
+let _touchStartTime = 0;
+let _touchStartTarget = null;
+let _touchStartX = 0;
+let _touchStartY = 0;
+
+document.getElementById('recipe-list').addEventListener('touchstart', e => {
+  const card = e.target.closest('.recipe-card');
+  if (!card) return;
+  _touchStartTime = Date.now();
+  _touchStartTarget = card;
+  _touchStartX = e.touches[0].clientX;
+  _touchStartY = e.touches[0].clientY;
+}, { passive: true });
+
+document.getElementById('recipe-list').addEventListener('touchmove', e => {
+  if (!_touchStartTarget) return;
+  const dx = Math.abs(e.touches[0].clientX - _touchStartX);
+  const dy = Math.abs(e.touches[0].clientY - _touchStartY);
+  if (dx > 10 || dy > 10) {
+    _touchStartTarget = null;
+  }
+}, { passive: true });
+
+document.getElementById('recipe-list').addEventListener('touchend', e => {
+  const target = _touchStartTarget;
+  _touchStartTarget = null;
+  if (!target) return;
+  const elapsed = Date.now() - _touchStartTime;
+  if (elapsed > 500) {
+    addToCartByRecipe(parseInt(target.dataset.id));
+    target._longPressed = true;
+    e.preventDefault();
+  }
+}, { passive: false });
 
 initCurrentUser().then(() => { loadCart(); loadRecipes(); });
 
