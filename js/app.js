@@ -11,6 +11,7 @@ let _activeCategory = 'all';
 let _currentDetailIndex = -1;
 let _detailSwipeInitialized = false;
 let _recipesLoaded = false;
+let _imageObserver = null;
 
 // 图片 CDN 优化：Supabase Storage 图片变换
 function thumbUrl(url) {
@@ -131,7 +132,7 @@ function renderRecipes(cat) {
 
   list.innerHTML = show.map(r => {
     const img = r.image
-      ? `<img src="${thumbUrl(r.image)}" alt="${r.name}" loading="lazy">`
+      ? `<img class="lazy-img" src="" data-src="${thumbUrl(r.image)}" alt="${r.name}">`
       : '<div class="placeholder-img">🍲</div>';
     const count = _orderCounts[r.id] || 0;
     const countHtml = count > 0 ? `<span class="order-count-badge">${count}次</span>` : '';
@@ -153,6 +154,7 @@ function renderRecipes(cat) {
     list.innerHTML += `<div class="load-more-sentinel" id="recipe-load-more"></div>`;
     _observeRecipeLoadMore();
   }
+  _observeImages();
 }
 
 let _recipeObserver = null;
@@ -169,6 +171,21 @@ function _observeRecipeLoadMore() {
     }
   }, { threshold: 0.1 });
   _recipeObserver.observe(el);
+}
+
+function _observeImages() {
+  if (_imageObserver) _imageObserver.disconnect();
+  _imageObserver = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const img = entry.target;
+        img.src = img.dataset.src;
+        img.onload = () => _imageObserver.unobserve(img);
+        img.onerror = () => _imageObserver.unobserve(img);
+      }
+    });
+  }, { rootMargin: '200px' });
+  document.querySelectorAll('.lazy-img').forEach(img => _imageObserver.observe(img));
 }
 
 function _getFilteredRecipes() {
