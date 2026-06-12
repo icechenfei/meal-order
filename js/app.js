@@ -262,7 +262,7 @@ function showDetail(id) {
 
   const hint = document.getElementById('detail-swipe-hint');
   if (hint) {
-    hint.textContent = filtered.length > 1 ? '👆👇 上下滑动切换菜品' : '';
+    hint.textContent = filtered.length > 1 ? '👆👇 上下切换  👈👉 左右返回' : '👈👉 左右滑动返回菜单';
   }
 
   showPage('page-detail');
@@ -276,30 +276,40 @@ function initDetailSwipe() {
   const page = document.getElementById('page-detail');
   let startX = 0;
   let startY = 0;
-  let swiping = false;
+  let _swipeDirection = null;
 
   const onTouchStart = e => {
     startX = e.touches[0].clientX;
     startY = e.touches[0].clientY;
-    swiping = false;
+    _swipeDirection = null;
   };
 
   const onTouchMove = e => {
+    if (_swipeDirection) return;
     const dx = Math.abs(e.touches[0].clientX - startX);
     const dy = Math.abs(e.touches[0].clientY - startY);
-    if (dy > dx && dy > 20) {
-      swiping = true;
+    if (dx > 20 && dx > dy) {
+      _swipeDirection = 'h';
+    } else if (dy > 20 && dy >= dx) {
+      _swipeDirection = 'v';
     }
   };
 
   const onTouchEnd = e => {
-    if (!swiping) return;
+    if (!_swipeDirection) return;
+    const dx = e.changedTouches[0].clientX - startX;
     const dy = e.changedTouches[0].clientY - startY;
-    const filtered = _getFilteredRecipes();
-    if (dy > 80 && _currentDetailIndex > 0) {
-      showDetail(filtered[_currentDetailIndex - 1].id);
-    } else if (dy < -80 && _currentDetailIndex < filtered.length - 1) {
-      showDetail(filtered[_currentDetailIndex + 1].id);
+    if (_swipeDirection === 'h') {
+      if (Math.abs(dx) > 80) {
+        showPage('page-menu');
+      }
+    } else if (_swipeDirection === 'v') {
+      const filtered = _getFilteredRecipes();
+      if (dy > 80 && _currentDetailIndex > 0) {
+        showDetail(filtered[_currentDetailIndex - 1].id);
+      } else if (dy < -80 && _currentDetailIndex < filtered.length - 1) {
+        showDetail(filtered[_currentDetailIndex + 1].id);
+      }
     }
   };
 
