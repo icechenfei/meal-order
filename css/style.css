@@ -203,6 +203,7 @@ body {
 /* ===== Category Filter ===== */
 .category-bar {
   display: flex;
+  flex-wrap: nowrap;
   gap: 6px;
   overflow-x: auto;
   padding: 2px 0 8px;
@@ -258,6 +259,7 @@ body {
 /* ===== Tag Bar (点餐端) ===== */
 .tag-bar {
   display: flex;
+  flex-wrap: nowrap;
   gap: 6px;
   overflow-x: auto;
   padding: 2px 0 8px;
