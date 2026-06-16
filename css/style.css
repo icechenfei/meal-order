@@ -203,19 +203,19 @@ body {
 /* ===== Category Filter ===== */
 .category-bar {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 2px 0 8px;
-  margin-bottom: 2px;
-}
-.category-row, .sort-row {
-  display: flex;
   gap: 6px;
   overflow-x: auto;
+  padding: 2px 0 8px;
+  margin-bottom: 2px;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
 }
-.category-row::-webkit-scrollbar, .sort-row::-webkit-scrollbar { display: none; }
+.category-bar::-webkit-scrollbar { display: none; }
+.sort-row {
+  display: flex;
+  gap: 6px;
+  padding-bottom: 8px;
+}
 .category-tag {
   white-space: nowrap;
   padding: 6px 14px;

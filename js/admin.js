@@ -90,19 +90,19 @@ async function loadAdminRecipes() {
 function renderAdminCategoryBar() {
   const cats = [...new Set(_allRecipes.map(r => r.category || '其他'))];
   const bar = document.getElementById('admin-category-bar');
+  const sortBar = document.getElementById('admin-sort-bar');
   const allCats = ['全部', ...cats];
   const sortOptions = [
     { key: 'name', label: '📌 名称' },
     { key: 'category', label: '📂 分类' },
     { key: 'created_at', label: '🕐 时间' },
   ];
-  const catHtml = allCats.map(c =>
+  bar.innerHTML = allCats.map(c =>
     `<button class="category-tag${c === _adminCategory ? ' active' : ''}" onclick="selectAdminCategory('${c}')">${c}</button>`
   ).join('');
-  const sortHtml = sortOptions.map(s =>
+  sortBar.innerHTML = sortOptions.map(s =>
     `<button class="sort-tag${s.key === _adminSort ? ' active' : ''}" data-sort="${s.key}" onclick="selectAdminSort('${s.key}')">${s.label}</button>`
   ).join('');
-  bar.innerHTML = `<div class="category-row">${catHtml}</div><div class="sort-row">${sortHtml}</div>`;
 }
 
 function selectAdminCategory(cat) {
