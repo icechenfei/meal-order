@@ -85,11 +85,12 @@ async function loadRecipes() {
 
 function renderCategories() {
   const bar = document.getElementById('category-bar');
+  const all = `<span class="category-tag active" data-cat="all" onclick="filterCategory('all', this)">全部</span>`;
   const hot = `<span class="category-tag" data-cat="__hot" onclick="filterCategory('__hot', this)">🔥 常点</span>`;
   const items = categories.map(c =>
     `<span class="category-tag" data-cat="${c}" onclick="filterCategory('${c}', this)">${c}</span>`
   ).join('');
-  bar.innerHTML = hot + items;
+  bar.innerHTML = all + hot + items;
   renderTagBar();
 }
 
