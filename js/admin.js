@@ -4,6 +4,7 @@ let _allRecipes = [];
 let _adminCategory = '全部';
 let _adminSearchQuery = '';
 let _adminPage = 1;
+let _adminSort = 'created_at'; // name / category / created_at
 const _adminPerPage = 10;
 
 const COMPRESS_MAX_SIZE = 800;   // 最大宽/高
@@ -66,11 +67,19 @@ async function loadAdminRecipes() {
 function renderAdminCategoryBar() {
   const cats = [...new Set(_allRecipes.map(r => r.category || '其他'))];
   const bar = document.getElementById('admin-category-bar');
-  if (cats.length <= 1) { bar.innerHTML = ''; return; }
   const allCats = ['全部', ...cats];
-  bar.innerHTML = allCats.map(c =>
+  const sortOptions = [
+    { key: 'name', label: '📌 名称' },
+    { key: 'category', label: '📂 分类' },
+    { key: 'created_at', label: '🕐 时间' },
+  ];
+  const catHtml = allCats.map(c =>
     `<button class="category-tag${c === _adminCategory ? ' active' : ''}" onclick="selectAdminCategory('${c}')">${c}</button>`
   ).join('');
+  const sortHtml = sortOptions.map(s =>
+    `<button class="sort-tag${s.key === _adminSort ? ' active' : ''}" data-sort="${s.key}" onclick="selectAdminSort('${s.key}')">${s.label}</button>`
+  ).join('');
+  bar.innerHTML = `<div class="category-row">${catHtml}</div><div class="sort-row">${sortHtml}</div>`;
 }
 
 function selectAdminCategory(cat) {
@@ -78,6 +87,15 @@ function selectAdminCategory(cat) {
   _adminPage = 1;
   document.querySelectorAll('#admin-category-bar .category-tag').forEach(t => {
     t.classList.toggle('active', t.textContent === cat);
+  });
+  renderAdminRecipes();
+}
+
+function selectAdminSort(sort) {
+  _adminSort = sort;
+  _adminPage = 1;
+  document.querySelectorAll('#admin-category-bar .sort-tag').forEach(t => {
+    t.classList.toggle('active', t.dataset.sort === sort);
   });
   renderAdminRecipes();
 }
@@ -97,6 +115,17 @@ function renderAdminRecipes() {
   if (_adminSearchQuery) {
     data = data.filter(r => r.name.toLowerCase().includes(_adminSearchQuery));
   }
+
+  // 排序
+  data = [...data].sort((a, b) => {
+    if (_adminSort === 'name') {
+      return (a.name || '').localeCompare(b.name || '', 'zh');
+    } else if (_adminSort === 'category') {
+      const catDiff = (a.category || '其他').localeCompare(b.category || '其他', 'zh');
+      return catDiff !== 0 ? catDiff : (a.name || '').localeCompare(b.name || '', 'zh');
+    }
+    return 0; // created_at 已经在查询时排好序
+  });
 
   if (data.length === 0) {
     list.innerHTML = '<div class="empty-state"><div class="emoji">📖</div><p>还没有菜谱，点击"添加"创建</p></div>';

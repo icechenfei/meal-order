@@ -203,14 +203,19 @@ body {
 /* ===== Category Filter ===== */
 .category-bar {
   display: flex;
+  flex-direction: column;
   gap: 6px;
-  overflow-x: auto;
   padding: 2px 0 8px;
   margin-bottom: 2px;
+}
+.category-row, .sort-row {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
 }
-.category-bar::-webkit-scrollbar { display: none; }
+.category-row::-webkit-scrollbar, .sort-row::-webkit-scrollbar { display: none; }
 .category-tag {
   white-space: nowrap;
   padding: 6px 14px;
@@ -229,6 +234,25 @@ body {
   background: var(--primary);
   color: white;
   border-color: var(--primary);
+}
+.sort-tag {
+  white-space: nowrap;
+  padding: 4px 12px;
+  border-radius: 16px;
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  font-size: 12px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all .2s;
+  user-select: none;
+  color: var(--text-secondary);
+}
+.sort-tag:active { transform: scale(0.95); }
+.sort-tag.active {
+  background: var(--text);
+  color: white;
+  border-color: var(--text);
 }
 
 /* ===== Recipe Grid ===== */
