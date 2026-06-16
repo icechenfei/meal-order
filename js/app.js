@@ -8,6 +8,7 @@ let _searchQuery = '';
 let _recipePage = 1;
 const _recipePerPage = 10;
 let _activeCategory = 'all';
+let _activeTag = '';  // 标签筛选
 let _currentDetailIndex = -1;
 let _detailSwipeInitialized = false;
 let _recipesLoaded = false;
@@ -89,6 +90,36 @@ function renderCategories() {
     `<span class="category-tag" data-cat="${c}" onclick="filterCategory('${c}', this)">${c}</span>`
   ).join('');
   bar.innerHTML = hot + items;
+  renderTagBar();
+}
+
+function renderTagBar() {
+  const tagSet = new Set();
+  recipes.forEach(r => {
+    try { (JSON.parse(r.tags) || []).forEach(t => tagSet.add(t)); } catch {}
+  });
+  if (tagSet.size === 0) { document.getElementById('tag-bar').innerHTML = ''; return; }
+  const PRESET = [
+    { name: '辣', emoji: '🌶️' }, { name: '甜', emoji: '🍬' }, { name: '酸', emoji: '🍋' },
+    { name: '咸鲜', emoji: '🧂' }, { name: '快手菜', emoji: '⚡' }, { name: '硬菜', emoji: '🔥' },
+    { name: '凉菜', emoji: '🥗' }, { name: '汤', emoji: '🍲' }, { name: '主食', emoji: '🥟' },
+  ];
+  const tags = [...tagSet].sort((a, b) => {
+    const ia = PRESET.findIndex(p => p.name === a);
+    const ib = PRESET.findIndex(p => p.name === b);
+    return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+  });
+  document.getElementById('tag-bar').innerHTML = tags.map(t => {
+    const p = PRESET.find(x => x.name === t);
+    return `<span class="tag-filter${_activeTag === t ? ' active' : ''}" data-tag="${t}" onclick="filterTag('${t}', this)">${p ? p.emoji + ' ' : ''}${t}</span>`;
+  }).join('');
+}
+
+function filterTag(tag, el) {
+  if (_activeTag === tag) { _activeTag = ''; el.classList.remove('active'); }
+  else { document.querySelectorAll('.tag-filter').forEach(t => t.classList.remove('active')); _activeTag = tag; el.classList.add('active'); }
+  _recipePage = 1;
+  renderRecipes();
 }
 
 function filterCategory(cat, el) {
@@ -117,6 +148,13 @@ function renderRecipes(cat) {
     filtered = filtered.filter(r => r.category === cat);
   }
 
+  // 标签过滤
+  if (_activeTag) {
+    filtered = filtered.filter(r => {
+      try { return (JSON.parse(r.tags) || []).includes(_activeTag); } catch { return false; }
+    });
+  }
+
   // 更新自定义按钮可见性
   _updateCustomBtn();
 
@@ -136,6 +174,19 @@ function renderRecipes(cat) {
       : '<div class="placeholder-img">🍲</div>';
     const count = _orderCounts[r.id] || 0;
     const countHtml = count > 0 ? `<span class="order-count-badge">${count}次</span>` : '';
+    let tagHtml = '';
+    try {
+      const PRESET = [
+        { name: '辣', emoji: '🌶️' }, { name: '甜', emoji: '🍬' }, { name: '酸', emoji: '🍋' },
+        { name: '咸鲜', emoji: '🧂' }, { name: '快手菜', emoji: '⚡' }, { name: '硬菜', emoji: '🔥' },
+        { name: '凉菜', emoji: '🥗' }, { name: '汤', emoji: '🍲' }, { name: '主食', emoji: '🥟' },
+      ];
+      const tags = JSON.parse(r.tags) || [];
+      tagHtml = tags.slice(0, 3).map(t => {
+        const p = PRESET.find(x => x.name === t);
+        return `<span class="card-tag">${p ? p.emoji : ''}${t}</span>`;
+      }).join('');
+    } catch {}
     return `
       <div class="recipe-card" data-id="${r.id}">
         ${img}
@@ -145,6 +196,7 @@ function renderRecipes(cat) {
             <span class="category">${r.category || '其他'}</span>
             ${countHtml}
           </div>
+          ${tagHtml ? `<div class="recipe-card-tags">${tagHtml}</div>` : ''}
         </div>
       </div>
     `;
@@ -198,6 +250,11 @@ function _getFilteredRecipes() {
     filtered.sort((a, b) => (_orderCounts[b.id] || 0) - (_orderCounts[a.id] || 0));
   } else if (_activeCategory !== 'all') {
     filtered = filtered.filter(r => r.category === _activeCategory);
+  }
+  if (_activeTag) {
+    filtered = filtered.filter(r => {
+      try { return (JSON.parse(r.tags) || []).includes(_activeTag); } catch { return false; }
+    });
   }
   return filtered;
 }
@@ -269,6 +326,20 @@ function showDetail(id) {
   }
   html += `<span class="detail-category">${r.category || '其他'}</span>`;
   html += `<h2>${r.name}</h2>`;
+  try {
+    const tags = JSON.parse(r.tags) || [];
+    if (tags.length > 0) {
+      const PRESET = [
+        { name: '辣', emoji: '🌶️' }, { name: '甜', emoji: '🍬' }, { name: '酸', emoji: '🍋' },
+        { name: '咸鲜', emoji: '🧂' }, { name: '快手菜', emoji: '⚡' }, { name: '硬菜', emoji: '🔥' },
+        { name: '凉菜', emoji: '🥗' }, { name: '汤', emoji: '🍲' }, { name: '主食', emoji: '🥟' },
+      ];
+      html += `<div class="detail-tags">${tags.map(t => {
+        const p = PRESET.find(x => x.name === t);
+        return `<span class="recipe-tag">${p ? p.emoji + ' ' : ''}${t}</span>`;
+      }).join('')}</div>`;
+    }
+  } catch {}
 
   if (r.ingredients) {
     const items = r.ingredients.split('\n').filter(Boolean);

@@ -10,6 +10,29 @@ const _adminPerPage = 10;
 const COMPRESS_MAX_SIZE = 800;   // 最大宽/高
 const COMPRESS_QUALITY = 0.8;    // JPEG 质量
 
+const PRESET_TAGS = [
+  { name: '辣', emoji: '🌶️' },
+  { name: '甜', emoji: '🍬' },
+  { name: '酸', emoji: '🍋' },
+  { name: '咸鲜', emoji: '🧂' },
+  { name: '快手菜', emoji: '⚡' },
+  { name: '硬菜', emoji: '🔥' },
+  { name: '凉菜', emoji: '🥗' },
+  { name: '汤', emoji: '🍲' },
+  { name: '主食', emoji: '🥟' },
+];
+
+function getTags(el) {
+  try { return JSON.parse(el) || []; } catch { return []; }
+}
+
+function renderTagPills(tags) {
+  return tags.map(t => {
+    const preset = PRESET_TAGS.find(p => p.name === t);
+    return `<span class="recipe-tag">${preset ? preset.emoji + ' ' : ''}${t}</span>`;
+  }).join('');
+}
+
 async function compressImage(source) {
   // source: File 或 Blob
   const blob = source instanceof Blob ? source : await fetch(source).then(r => r.blob());
@@ -139,12 +162,15 @@ function renderAdminRecipes() {
     const thumb = r.image
       ? `<img class="thumb" src="${r.image}">`
       : '<div class="thumb-placeholder">🍲</div>';
+    const tags = getTags(r.tags);
+    const tagHtml = tags.length > 0 ? `<div class="admin-tags">${renderTagPills(tags)}</div>` : '';
     return `
       <div class="admin-recipe-item">
         ${thumb}
         <div class="info">
           <h3>${r.name}</h3>
           <span class="cat">${r.category || '其他'}</span>
+          ${tagHtml}
         </div>
         <div class="actions">
           <button class="btn-view" onclick="viewRecipe(${r.id})">查看</button>
@@ -182,6 +208,7 @@ function showAddRecipe() {
   document.getElementById('recipe-form').reset();
   document.getElementById('recipe-id').value = '';
   document.getElementById('image-preview').style.display = 'none';
+  renderTagSelector([]);
   document.getElementById('modal-recipe').classList.add('active');
   loadCategories();
 }
@@ -208,8 +235,44 @@ async function editRecipe(id) {
   }
   document.getElementById('recipe-image').value = '';
 
+  renderTagSelector(getTags(data.tags));
   document.getElementById('modal-recipe').classList.add('active');
   loadCategories();
+}
+
+function renderTagSelector(selected) {
+  const container = document.getElementById('tag-selector');
+  container.innerHTML = PRESET_TAGS.map(t => {
+    const active = selected.includes(t.name) ? ' active' : '';
+    return `<button type="button" class="tag-pick${active}" data-tag="${t.name}" onclick="toggleTagPick(this)">${t.emoji} ${t.name}</button>`;
+  }).join('') + `<input type="text" id="custom-tag-input" placeholder="自定义标签" maxlength="6" onkeydown="if(event.key==='Enter'){event.preventDefault();addCustomTag()}"><button type="button" class="tag-pick tag-add-btn" onclick="addCustomTag()">+ 添加</button>`;
+}
+
+function toggleTagPick(btn) {
+  btn.classList.toggle('active');
+}
+
+function addCustomTag() {
+  const input = document.getElementById('custom-tag-input');
+  const val = input.value.trim();
+  if (!val) return;
+  const existing = document.querySelectorAll('#tag-selector .tag-pick[data-tag]');
+  for (const el of existing) {
+    if (el.dataset.tag === val) { el.classList.add('active'); input.value = ''; return; }
+  }
+  const container = document.getElementById('tag-selector');
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'tag-pick active';
+  btn.dataset.tag = val;
+  btn.textContent = val;
+  btn.onclick = function() { toggleTagPick(this); };
+  container.insertBefore(btn, input);
+  input.value = '';
+}
+
+function getSelectedTags() {
+  return [...document.querySelectorAll('#tag-selector .tag-pick.active')].map(b => b.dataset.tag);
 }
 
 async function saveRecipe(e) {
@@ -218,11 +281,13 @@ async function saveRecipe(e) {
   const name = document.getElementById('recipe-name').value.trim();
   if (!name) { toast('请输入菜名'); return; }
 
+  const tags = getSelectedTags();
   const data = {
     name,
     category: document.getElementById('recipe-category').value.trim() || '其他',
     ingredients: document.getElementById('recipe-ingredients').value.trim(),
     steps: document.getElementById('recipe-steps').value.trim(),
+    tags: tags.length > 0 ? JSON.stringify(tags) : null,
   };
 
   const fileInput = document.getElementById('recipe-image');
@@ -277,6 +342,8 @@ async function viewRecipe(id) {
   document.getElementById('detail-name').textContent = r.name;
   let html = '';
   if (r.image) html += `<img src="${r.image}" alt="${r.name}">`;
+  const tags = getTags(r.tags);
+  if (tags.length > 0) html += `<div class="detail-tags">${renderTagPills(tags)}</div>`;
   if (r.ingredients) {
     html += `<h3>🥬 配菜</h3><ul>${r.ingredients.split('\n').filter(Boolean).map(i => `<li>${i}</li>`).join('')}</ul>`;
   }
