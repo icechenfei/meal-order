@@ -33,6 +33,28 @@ function renderTagPills(tags) {
   }).join('');
 }
 
+// 图片 CDN 优化：Supabase Storage 图片变换
+function thumbUrl(url) {
+  if (!url || !url.includes('supabase.co/storage')) return url;
+  return url + (url.includes('?') ? '&' : '?') + 'width=400&quality=75&resize=cover';
+}
+
+let _adminImageObserver = null;
+function _observeAdminImages() {
+  if (_adminImageObserver) _adminImageObserver.disconnect();
+  _adminImageObserver = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const img = entry.target;
+        img.src = img.dataset.src;
+        img.onload = () => _adminImageObserver.unobserve(img);
+        img.onerror = () => _adminImageObserver.unobserve(img);
+      }
+    });
+  }, { rootMargin: '200px' });
+  document.querySelectorAll('.lazy-img').forEach(img => _adminImageObserver.observe(img));
+}
+
 async function compressImage(source) {
   // source: File 或 Blob
   const blob = source instanceof Blob ? source : await fetch(source).then(r => r.blob());
@@ -160,7 +182,7 @@ function renderAdminRecipes() {
 
   list.innerHTML = show.map(r => {
     const thumb = r.image
-      ? `<img class="thumb" src="${r.image}">`
+      ? `<img class="thumb lazy-img" src="" data-src="${thumbUrl(r.image)}">`
       : '<div class="thumb-placeholder">🍲</div>';
     const tags = getTags(r.tags);
     const tagHtml = tags.length > 0 ? `<div class="admin-tags">${renderTagPills(tags)}</div>` : '';
@@ -185,6 +207,7 @@ function renderAdminRecipes() {
     list.innerHTML += `<div class="load-more-sentinel" id="admin-load-more"></div>`;
     _observeAdminLoadMore();
   }
+  _observeAdminImages();
 }
 
 let _adminObserver = null;
@@ -341,7 +364,7 @@ async function viewRecipe(id) {
 
   document.getElementById('detail-name').textContent = r.name;
   let html = '';
-  if (r.image) html += `<img src="${r.image}" alt="${r.name}">`;
+  if (r.image) html += `<img src="${thumbUrl(r.image)}" alt="${r.name}">`;
   const tags = getTags(r.tags);
   if (tags.length > 0) html += `<div class="detail-tags">${renderTagPills(tags)}</div>`;
   if (r.ingredients) {
