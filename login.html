@@ -10,8 +10,8 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <title>登录 - 今天吃什么</title>
-  <!-- GSAP -->
-  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <!-- GSAP（国内CDN） -->
+  <script src="https://cdn.bootcdn.net/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script>
@@ -43,6 +43,8 @@
       align-items: flex-end;
       justify-content: center;
       overflow: hidden;
+      /* 初始隐藏，GSAP 加载后显示 */
+      opacity: 0;
     }
     .grid-bg {
       position: absolute;
@@ -361,11 +363,18 @@
     const allEyes = gsap.utils.toArray('.eye');
     const allCart = gsap.utils.toArray('.cart-item');
 
-    // 1. 入场动画
-    gsap.from('#leftBox', {
-      width: 0,
-      duration: 1.2,
+    // 1. 入场动画（不用 width 动画，避免裁剪小人）
+    gsap.to('#leftBox', {
+      opacity: 1,
+      duration: 0.6,
       ease: 'power2.out'
+    });
+    gsap.from(cartoonWrap, {
+      opacity: 0,
+      y: 40,
+      delay: 0.3,
+      duration: 1,
+      ease: 'elastic.out(1, 0.5)'
     });
     gsap.from(loginCard, {
       opacity: 0,
@@ -373,13 +382,6 @@
       delay: 0.4,
       duration: 0.8,
       ease: 'power2.out'
-    });
-    gsap.from(cartoonWrap, {
-      opacity: 0,
-      y: 20,
-      delay: 0.6,
-      duration: 1,
-      ease: 'elastic.out(1, 0.5)'
     });
 
     // 2. 小人持续悬浮
