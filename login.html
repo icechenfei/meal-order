@@ -73,6 +73,7 @@
       margin-bottom: 100px;
       width: 340px;
       height: 220px;
+      transform: rotate(8deg);
     }
     .cart-item {
       position: absolute;
@@ -286,7 +287,7 @@
       }
       .cartoon-wrap {
         margin-bottom: 20px;
-        transform: scale(0.7);
+        transform: scale(0.7) rotate(8deg);
       }
       .right-box {
         width: 100%;
@@ -386,11 +387,13 @@
       ease: 'sine.inOut'
     });
 
-    // 3. 眼球跟随鼠标
+    // 3. 眼球跟随鼠标（PC），默认看向右侧表单（移动端）
     const rotateEye = gsap.quickTo(allEyes, "rotation", {
       duration: 0.3,
       ease: "power2.out"
     });
+    // 默认眼球转到右侧（看向表单方向）
+    rotateEye(30);
     document.addEventListener('mousemove', e => {
       const x = e.clientX - window.innerWidth / 2;
       const rad = Math.atan2(e.clientY - window.innerHeight / 2, x);
@@ -398,27 +401,30 @@
       rotateEye(deg);
     });
 
-    // 4. 邮箱聚焦：小人探头看
-    emailInput.addEventListener('focus', () => {
+    // 4. 邮箱聚焦：小人探头看（focus + touchstart 双保险）
+    function emailFocus() {
       gsap.killTweensOf(cartoonWrap);
       gsap.to(cartoonWrap, {
         y: -18,
         scale: 1.06,
-        rotate: 2,
+        rotate: 12,
         duration: 0.5,
         ease: 'power2.out'
       });
-    });
-    emailInput.addEventListener('blur', () => {
+    }
+    function emailBlur() {
       gsap.killTweensOf(cartoonWrap);
       gsap.to(cartoonWrap, {
         y: 0,
         scale: 1,
-        rotate: 0,
+        rotate: 8,
         duration: 0.4,
         ease: 'power2.inOut'
       });
-    });
+    }
+    emailInput.addEventListener('focus', emailFocus);
+    emailInput.addEventListener('touchstart', emailFocus);
+    emailInput.addEventListener('blur', emailBlur);
 
     // 5. 密码聚焦：小人转头 + 闭眼（移动端/PC不同方向）
     const isMobile = window.innerWidth <= 768;
@@ -459,9 +465,10 @@
         ease: 'power2.out'
       });
       gsap.to(cartoonWrap, {
-        rotate: 0,
+        rotate: 8,
         x: 0,
         y: 0,
+        scale: 1,
         duration: 0.4,
         ease: 'power2.inOut'
       });
