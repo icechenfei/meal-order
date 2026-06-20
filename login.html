@@ -10,37 +10,468 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <title>登录 - 今天吃什么</title>
-  <link rel="stylesheet" href="css/style.css">
+  <!-- GSAP -->
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script>
     const SUPABASE_URL = 'https://yrqparacjtjkgozfwsqj.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlycXBhcmFjanRqa2dvemZ3c3FqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3NTk0OTksImV4cCI6MjA3ODMzNTQ5OX0.jUnvHmo5jxLCQPtqPc7S8O1S3Il8FtqMrfRMN9OsRBc';
     supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   </script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, "PingFang SC", "Microsoft Yahei", sans-serif;
+      display: flex;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    /* ===== 左侧插画区 ===== */
+    @keyframes gridMove {
+      0% { background-position: 0 0; }
+      100% { background-position: 40px 40px; }
+    }
+    .left-box {
+      width: 45%;
+      background: linear-gradient(135deg, #ff6b35, #ff8c42);
+      position: relative;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .grid-bg {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px);
+      background-size: 40px 40px;
+      animation: gridMove 8s linear infinite;
+    }
+    .logo-tag {
+      position: absolute;
+      top: 20px;
+      left: 24px;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .logo-tag span { font-size: 22px; }
+
+    /* 卡通容器 */
+    .cartoon-wrap {
+      position: relative;
+      margin-bottom: 100px;
+      width: 340px;
+      height: 220px;
+    }
+    .cart-item {
+      position: absolute;
+      overflow: visible;
+    }
+    .eye {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      position: absolute;
+      transform-origin: center;
+    }
+    /* 汤圆（白色圆胖子） */
+    .tangyuan {
+      width: 120px;
+      height: 100px;
+      background: #fff5eb;
+      border-radius: 60px 60px 0 0;
+      bottom: 0;
+      left: 10px;
+    }
+    .tangyuan .eye {
+      background: #333;
+      top: 28px;
+    }
+    .tangyuan .eye1 { left: 28px; }
+    .tangyuan .eye2 { left: 55px; }
+    .tangyuan .mouth {
+      width: 20px;
+      height: 10px;
+      border-bottom: 3px solid #333;
+      border-radius: 0 0 50% 50%;
+      position: absolute;
+      top: 52px;
+      left: 35px;
+    }
+    /* 饺子（橙色尖顶） */
+    .jiaozi {
+      width: 100px;
+      height: 110px;
+      background: #ff9966;
+      border-radius: 50px 50px 10px 10px;
+      bottom: 0;
+      left: 110px;
+    }
+    .jiaozi::before {
+      content: "";
+      position: absolute;
+      top: -18px;
+      left: 25px;
+      width: 50px;
+      height: 30px;
+      background: #ff9966;
+      border-radius: 50% 50% 0 0;
+    }
+    .jiaozi .eye {
+      background: #222;
+      top: 30px;
+    }
+    .jiaozi .eye1 { left: 22px; }
+    .jiaozi .eye2 { left: 48px; }
+    /* 面条（细高紫色） */
+    .noodle {
+      width: 60px;
+      height: 160px;
+      background: #7b42e0;
+      border-radius: 30px 30px 0 0;
+      bottom: 0;
+      left: 190px;
+    }
+    .noodle .eye {
+      background: #fff;
+      top: 30px;
+    }
+    .noodle .eye1 { left: 14px; }
+    .noodle .eye2 { left: 34px; }
+    /* 煎蛋（黄色矮胖） */
+    .egg {
+      width: 100px;
+      height: 80px;
+      background: #f9d332;
+      border-radius: 50px 50px 0 0;
+      bottom: 0;
+      left: 240px;
+    }
+    .egg::before {
+      content: "";
+      position: absolute;
+      top: 15px;
+      left: 28px;
+      width: 36px;
+      height: 36px;
+      background: #fff;
+      border-radius: 50%;
+    }
+    .egg .eye {
+      background: #333;
+      top: 26px;
+      z-index: 1;
+    }
+    .egg .eye1 { left: 30px; }
+    .egg .eye2 { left: 52px; }
+
+    /* ===== 右侧登录区 ===== */
+    .right-box {
+      width: 55%;
+      background: linear-gradient(120deg, #fff8f4, #fff0e6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .login-card {
+      width: 380px;
+      background: #fff;
+      padding: 40px 32px;
+      border-radius: 16px;
+      box-shadow: 0 8px 40px rgba(255,107,53,0.1);
+    }
+    .welcome-tip {
+      text-align: center;
+      font-size: 12px;
+      color: #ff6b35;
+      letter-spacing: 2px;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+    .login-title {
+      text-align: center;
+      font-size: 24px;
+      color: #111;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .login-desc {
+      text-align: center;
+      font-size: 13px;
+      color: #999;
+      margin-bottom: 30px;
+    }
+    .form-item {
+      margin-bottom: 18px;
+    }
+    .form-label {
+      font-size: 13px;
+      color: #444;
+      margin-bottom: 6px;
+      display: block;
+      font-weight: 500;
+    }
+    .form-input {
+      width: 100%;
+      height: 44px;
+      padding: 0 14px;
+      border: 1.5px solid #eee;
+      border-radius: 10px;
+      font-size: 14px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      background: #fafafa;
+    }
+    .form-input:focus {
+      outline: none;
+      border-color: #ff6b35;
+      box-shadow: 0 0 0 3px rgba(255,107,53,0.1);
+      background: #fff;
+    }
+    .login-error {
+      font-size: 12px;
+      color: #f23c3c;
+      margin-top: 4px;
+      display: none;
+    }
+    .login-error.show {
+      display: block;
+    }
+    .btn-primary {
+      width: 100%;
+      height: 46px;
+      background: linear-gradient(90deg, #ff6b35, #ff8c42);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: transform 0.15s;
+    }
+    .btn-primary:active {
+      transform: scale(0.98);
+    }
+    .btn-primary:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+    .footer-text {
+      text-align: center;
+      font-size: 11px;
+      color: #ccc;
+      margin-top: 18px;
+    }
+
+    /* ===== 移动端适配 ===== */
+    @media (max-width: 768px) {
+      body {
+        flex-direction: column;
+      }
+      .left-box {
+        width: 100%;
+        height: 220px;
+        align-items: center;
+      }
+      .cartoon-wrap {
+        margin-bottom: 20px;
+        transform: scale(0.7);
+      }
+      .right-box {
+        width: 100%;
+        flex: 1;
+      }
+      .login-card {
+        width: 90%;
+        max-width: 380px;
+        padding: 28px 24px;
+        box-shadow: none;
+      }
+    }
+  </style>
 </head>
 <body>
-  <div class="container">
-    <div class="login-page">
-      <div class="login-header">
-        <div class="login-logo">🍽️</div>
-        <h1>今天吃什么</h1>
-        <p class="subtitle">登录后即可点餐</p>
+  <!-- 左侧插画区 -->
+  <div class="left-box" id="leftBox">
+    <div class="grid-bg"></div>
+    <div class="logo-tag"><span>🍽️</span> 今天吃什么</div>
+    <div class="cartoon-wrap" id="cartoonWrap">
+      <div class="cart-item tangyuan">
+        <div class="eye eye1"></div>
+        <div class="eye eye2"></div>
+        <div class="mouth"></div>
       </div>
-      <form id="login-form" class="login-form">
-        <div class="form-group">
-          <label>邮箱</label>
-          <input type="email" id="login-email" placeholder="your@email.com" required autocomplete="email">
+      <div class="cart-item jiaozi">
+        <div class="eye eye1"></div>
+        <div class="eye eye2"></div>
+      </div>
+      <div class="cart-item noodle">
+        <div class="eye eye1"></div>
+        <div class="eye eye2"></div>
+      </div>
+      <div class="cart-item egg">
+        <div class="eye eye1"></div>
+        <div class="eye eye2"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 右侧登录表单 -->
+  <div class="right-box">
+    <div class="login-card" id="loginCard">
+      <div class="welcome-tip">WELCOME</div>
+      <h2 class="login-title">今天吃什么</h2>
+      <p class="login-desc">登录后即可开始点餐</p>
+
+      <form id="login-form">
+        <div class="form-item">
+          <label class="form-label">邮箱</label>
+          <input type="email" class="form-input" id="login-email" placeholder="your@email.com" required autocomplete="email">
         </div>
-        <div class="form-group">
-          <label>密码</label>
-          <input type="password" id="login-password" placeholder="输入密码" required autocomplete="current-password">
+        <div class="form-item">
+          <label class="form-label">密码</label>
+          <input type="password" class="form-input" id="login-password" placeholder="输入密码" required autocomplete="current-password">
         </div>
         <div id="login-error" class="login-error"></div>
         <button type="submit" class="btn-primary" id="login-btn">登 录</button>
       </form>
+      <p class="footer-text">登录即表示同意使用条款</p>
     </div>
   </div>
+
   <script>
+    // ===== GSAP 动画 =====
+    const cartoonWrap = document.getElementById('cartoonWrap');
+    const loginCard = document.getElementById('loginCard');
+    const emailInput = document.getElementById('login-email');
+    const pwdInput = document.getElementById('login-password');
+    const loginBtn = document.getElementById('login-btn');
+    const errorEl = document.getElementById('login-error');
+    const allEyes = gsap.utils.toArray('.eye');
+    const allCart = gsap.utils.toArray('.cart-item');
+
+    // 1. 入场动画
+    gsap.from('#leftBox', {
+      width: 0,
+      duration: 1.2,
+      ease: 'power2.out'
+    });
+    gsap.from(loginCard, {
+      opacity: 0,
+      y: 30,
+      delay: 0.4,
+      duration: 0.8,
+      ease: 'power2.out'
+    });
+    gsap.from(cartoonWrap, {
+      opacity: 0,
+      y: 20,
+      delay: 0.6,
+      duration: 1,
+      ease: 'elastic.out(1, 0.5)'
+    });
+
+    // 2. 小人持续悬浮
+    gsap.to(allCart, {
+      y: -8,
+      repeat: -1,
+      yoyo: true,
+      duration: 3.5,
+      stagger: 0.4,
+      ease: 'sine.inOut'
+    });
+
+    // 3. 眼球跟随鼠标
+    const rotateEye = gsap.quickTo(allEyes, "rotation", {
+      duration: 0.3,
+      ease: "power2.out"
+    });
+    document.addEventListener('mousemove', e => {
+      const x = e.clientX - window.innerWidth / 2;
+      const rad = Math.atan2(e.clientY - window.innerHeight / 2, x);
+      const deg = rad * (180 / Math.PI);
+      rotateEye(deg);
+    });
+
+    // 4. 邮箱聚焦：小人探头看
+    emailInput.addEventListener('focus', () => {
+      gsap.killTweensOf(cartoonWrap);
+      gsap.to(cartoonWrap, {
+        y: -18,
+        scale: 1.06,
+        rotate: 2,
+        duration: 0.5,
+        ease: 'power2.out'
+      });
+    });
+    emailInput.addEventListener('blur', () => {
+      gsap.killTweensOf(cartoonWrap);
+      gsap.to(cartoonWrap, {
+        y: 0,
+        scale: 1,
+        rotate: 0,
+        duration: 0.4,
+        ease: 'power2.inOut'
+      });
+    });
+
+    // 5. 密码聚焦：小人转头避开
+    pwdInput.addEventListener('focus', () => {
+      gsap.killTweensOf(cartoonWrap);
+      gsap.to(cartoonWrap, {
+        rotate: -14,
+        x: -12,
+        y: -5,
+        duration: 0.4,
+        ease: 'power2.out'
+      });
+    });
+    pwdInput.addEventListener('blur', () => {
+      gsap.killTweensOf(cartoonWrap);
+      gsap.to(cartoonWrap, {
+        rotate: 0,
+        x: 0,
+        y: 0,
+        duration: 0.4,
+        ease: 'power2.inOut'
+      });
+    });
+
+    // 6. 按钮呼吸光效
+    gsap.to(loginBtn, {
+      filter: 'brightness(1.1)',
+      repeat: -1,
+      yoyo: true,
+      duration: 2.5,
+      ease: 'sine.inOut'
+    });
+
+    // 7. 错误摇头动画
+    function shakeHead() {
+      gsap.killTweensOf(cartoonWrap);
+      gsap.to(cartoonWrap, {
+        x: -12,
+        repeat: 4,
+        yoyo: true,
+        duration: 0.15,
+        onComplete: () => {
+          gsap.to(cartoonWrap, { x: 0, duration: 0.3 });
+        }
+      });
+    }
+
+    // ===== Supabase 登录逻辑 =====
     (async function() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
@@ -54,27 +485,29 @@
       e.preventDefault();
       const email = document.getElementById('login-email').value.trim();
       const password = document.getElementById('login-password').value;
-      const btn = document.getElementById('login-btn');
-      const errorEl = document.getElementById('login-error');
 
       if (!email || !password) {
         errorEl.textContent = '请输入邮箱和密码';
-        errorEl.style.display = 'block';
+        errorEl.classList.add('show');
+        gsap.from(errorEl, { y: -5, opacity: 0, duration: 0.3 });
+        shakeHead();
         return;
       }
 
-      btn.disabled = true;
-      btn.textContent = '登录中...';
-      errorEl.style.display = 'none';
+      loginBtn.disabled = true;
+      loginBtn.textContent = '登录中...';
+      errorEl.classList.remove('show');
 
       const { error } = await supabase.auth.signInWithPassword({ email, password });
 
-      btn.disabled = false;
-      btn.textContent = '登 录';
+      loginBtn.disabled = false;
+      loginBtn.textContent = '登 录';
 
       if (error) {
         errorEl.textContent = error.message === 'Invalid login credentials' ? '邮箱或密码错误' : error.message;
-        errorEl.style.display = 'block';
+        errorEl.classList.add('show');
+        gsap.from(errorEl, { y: -5, opacity: 0, duration: 0.3 });
+        shakeHead();
         return;
       }
 
