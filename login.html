@@ -420,16 +420,29 @@
       });
     });
 
-    // 5. 密码聚焦：小人转头避开
+    // 5. 密码聚焦：小人转头避开（移动端/PC不同方向）
+    const isMobile = window.innerWidth <= 768;
     pwdInput.addEventListener('focus', () => {
       gsap.killTweensOf(cartoonWrap);
-      gsap.to(cartoonWrap, {
-        rotate: -14,
-        x: -12,
-        y: -5,
-        duration: 0.4,
-        ease: 'power2.out'
-      });
+      if (isMobile) {
+        // 移动端：上下布局，小人抬头看天避开键盘
+        gsap.to(cartoonWrap, {
+          rotate: 12,
+          y: -10,
+          x: 0,
+          duration: 0.4,
+          ease: 'power2.out'
+        });
+      } else {
+        // PC端：左右布局，小人向左转头避开右侧密码框
+        gsap.to(cartoonWrap, {
+          rotate: -14,
+          x: -12,
+          y: -5,
+          duration: 0.4,
+          ease: 'power2.out'
+        });
+      }
     });
     pwdInput.addEventListener('blur', () => {
       gsap.killTweensOf(cartoonWrap);
