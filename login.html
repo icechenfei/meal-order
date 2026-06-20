@@ -430,8 +430,9 @@
     const isMobile = window.innerWidth <= 768;
     pwdInput.addEventListener('focus', () => {
       gsap.killTweensOf(cartoonWrap);
-      // 闭眼
+      // 闭眼：先归零旋转再压扁，避免变成斜线
       gsap.to(allEyes, {
+        rotation: 0,
         scaleY: 0.1,
         duration: 0.3,
         ease: 'power2.out'
